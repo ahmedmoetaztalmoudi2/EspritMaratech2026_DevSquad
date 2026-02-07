@@ -6,14 +6,16 @@ import {
     TeamOutlined, FileTextOutlined, LeftOutlined, RightOutlined,
     CheckCircleOutlined, CloseCircleOutlined, SearchOutlined,
     PlusOutlined, SendOutlined, HistoryOutlined,
+    EditOutlined, DeleteOutlined
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchReunions } from '../../redux/reunionSlice';
+import { fetchReunions, updateReunion, deleteReunion } from '../../redux/reunionSlice';
 import { fetchUsers } from '../../redux/userSlice';
 import { createDemande, fetchDemandesByDemandeur } from '../../redux/demandeReunionSlice';
 import { STATUT_REUNION_LABELS, STATUT_REUNION_COLORS } from '../../utils/constants';
 import { formatDate, formatDateTime, getInitials, getAvatarColor } from '../../utils/helpers';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { Popconfirm } from 'antd';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
 
@@ -30,6 +32,9 @@ const MesReunions = () => {
     const [searchText, setSearchText] = useState('');
     const [isDemandeModalOpen, setIsDemandeModalOpen] = useState(false);
     const [isMesDemandesOpen, setIsMesDemandesOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingReunion, setEditingReunion] = useState(null);
+    const [editForm] = Form.useForm();
     const [form] = Form.useForm();
     const dispatch = useDispatch();
     const { reunions, isLoading } = useSelector((state) => state.reunions);
@@ -40,10 +45,11 @@ const MesReunions = () => {
     useEffect(() => {
         dispatch(fetchReunions());
         dispatch(fetchUsers());
-        if (user?.id) {
-            dispatch(fetchDemandesByDemandeur(user.id));
+        const userId = user?.idUser || user?.id; // Handle both idUser and id
+        if (userId) {
+            dispatch(fetchDemandesByDemandeur(userId));
         }
-    }, [dispatch, user?.id]);
+    }, [dispatch, user]);
 
     // Navigation
     const prevMonth = () => setCurrentDate(currentDate.subtract(1, 'month'));
@@ -107,6 +113,47 @@ const MesReunions = () => {
             case 'ANNULEE': return '#ef4444';
             case 'EN_COURS': return '#c9a227';
             default: return '#64748b';
+        }
+    };
+
+    const handleEditReunion = (reunion) => {
+        setEditingReunion(reunion);
+        editForm.setFieldsValue({
+            ...reunion,
+            dateRange: [dayjs(reunion.dateDebut), dayjs(reunion.dateFin)],
+            participantIds: reunion.participants?.map(p => p.idUser || p.id) || [],
+        });
+        setIsModalOpen(false);
+        setIsEditModalOpen(true);
+    };
+
+    const handleDeleteReunion = async (id) => {
+        try {
+            await dispatch(deleteReunion({ id, userId: user?.idUser || user?.id })).unwrap();
+            message.success('Réunion supprimée avec succès');
+            setIsModalOpen(false);
+        } catch (error) {
+            message.error('Erreur lors de la suppression');
+        }
+    };
+
+    const handleUpdateSubmit = async (values) => {
+        try {
+            const [dateDebut, dateFin] = values.dateRange;
+            const data = {
+                ...values,
+                organisateurId: user?.idUser || user?.id,
+                dateDebut: dateDebut.format('YYYY-MM-DDTHH:mm:ss'),
+                dateFin: dateFin.format('YYYY-MM-DDTHH:mm:ss'),
+                participants: users.filter(u => values.participantIds?.includes(u.idUser || u.id)),
+            };
+
+            await dispatch(updateReunion({ id: editingReunion.id, data, userId: user?.idUser || user?.id })).unwrap();
+            message.success('Réunion modifiée avec succès');
+            setIsEditModalOpen(false);
+            setEditingReunion(null);
+        } catch (error) {
+            message.error('Erreur lors de la modification');
         }
     };
 
@@ -314,6 +361,7 @@ const MesReunions = () => {
                                                             <Tooltip title={`${p.prenom} ${p.nom}`} key={idx}>
                                                                 <Avatar
                                                                     size={20}
+                                                                    src={p.photoProfil}
                                                                     style={{
                                                                         background: getAvatarColor(p.nom),
                                                                         fontSize: 9,
@@ -400,6 +448,13 @@ const MesReunions = () => {
                                         <EnvironmentOutlined style={{ color: '#10b981' }} />
                                         <Text strong>{selectedReunion.lieu}</Text>
                                     </div>
+                                    {selectedReunion.lienMeet && (
+                                        <div style={{ marginTop: 8 }}>
+                                            <Button type="primary" href={selectedReunion.lienMeet} target="_blank" icon={<EnvironmentOutlined />}>
+                                                Rejoindre la réunion
+                                            </Button>
+                                        </div>
+                                    )}
                                 </Col>
                             </Row>
 
@@ -435,7 +490,11 @@ const MesReunions = () => {
                                                     borderRadius: 20
                                                 }}
                                             >
-                                                <Avatar size={24} style={{ background: getAvatarColor(p.nom) }}>
+                                                <Avatar
+                                                    size={24}
+                                                    src={p.photoProfil}
+                                                    style={{ background: getAvatarColor(p.nom) }}
+                                                >
                                                     {getInitials(p.nom, p.prenom)}
                                                 </Avatar>
                                                 <Text style={{ fontSize: 13 }}>{p.prenom} {p.nom}</Text>
@@ -460,9 +519,73 @@ const MesReunions = () => {
                                     </Card>
                                 </>
                             )}
+
+                            {/* Actions for owner */}
+                            {(user.role === 'RESPONSABLE' || selectedReunion.organisateur?.idUser === (user?.id || user?.idUser)) && (
+                                <div style={{ marginTop: 24, textAlign: 'right' }}>
+                                    <Space>
+                                        <Button
+                                            icon={<EditOutlined />}
+                                            onClick={() => handleEditReunion(selectedReunion)}
+                                        >
+                                            Modifier
+                                        </Button>
+                                        <Popconfirm
+                                            title="Supprimer cette réunion ?"
+                                            onConfirm={() => handleDeleteReunion(selectedReunion.id)}
+                                            okText="Oui"
+                                            cancelText="Non"
+                                        >
+                                            <Button
+                                                danger
+                                                icon={<DeleteOutlined />}
+                                            >
+                                                Supprimer
+                                            </Button>
+                                        </Popconfirm>
+                                    </Space>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Edit Reunion Modal */}
+            <Modal
+                title="Modifier la réunion"
+                open={isEditModalOpen}
+                onCancel={() => setIsEditModalOpen(false)}
+                footer={null}
+                width={600}
+            >
+                <Form
+                    form={editForm}
+                    layout="vertical"
+                    onFinish={handleUpdateSubmit}
+                >
+                    <Form.Item name="titre" label="Titre" rules={[{ required: true }]}>
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="dateRange" label="Date et Heure" rules={[{ required: true }]}>
+                        <DatePicker.RangePicker showTime format="DD/MM/YYYY HH:mm" style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Form.Item name="lieu" label="Lieu" rules={[{ required: true }]}>
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="participantIds" label="Participants">
+                        <Select mode="multiple" options={users.map(u => ({ value: u.idUser || u.id, label: `${u.prenom} ${u.nom}` }))} />
+                    </Form.Item>
+                    <Form.Item name="ordreDuJour" label="Ordre du jour">
+                        <TextArea rows={3} />
+                    </Form.Item>
+                    <Form.Item style={{ textAlign: 'right', marginBottom: 0 }}>
+                        <Space>
+                            <Button onClick={() => setIsEditModalOpen(false)}>Annuler</Button>
+                            <Button type="primary" htmlType="submit">Enregistrer</Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
             </Modal>
 
             {/* Modal Demande Réunion */}
@@ -489,20 +612,20 @@ const MesReunions = () => {
                             const demande = {
                                 titre: values.titre,
                                 description: values.description,
-                                dateSouhaitee: values.dateSouhaitee?.toISOString(),
+                                dateSouhaitee: values.dateSouhaitee?.format('YYYY-MM-DDTHH:mm:ss'),
                                 dureeEstimee: values.dureeEstimee,
                                 lieu: values.lieu,
                                 ordreDuJour: values.ordreDuJour,
                             };
                             await dispatch(createDemande({
                                 demande,
-                                demandeurId: user.id,
+                                demandeurId: user?.idUser || user?.id,
                                 destinataireId: values.destinataireId
                             })).unwrap();
                             message.success('Demande de réunion envoyée avec succès !');
                             setIsDemandeModalOpen(false);
                             form.resetFields();
-                            dispatch(fetchDemandesByDemandeur(user.id));
+                            dispatch(fetchDemandesByDemandeur(user?.idUser || user?.id));
                         } catch (error) {
                             message.error(error || 'Erreur lors de l\'envoi de la demande');
                         }

@@ -177,7 +177,10 @@ const BackOfficeLayout = () => {
                         }}
                     >
                         <Space>
-                            <Avatar style={{ background: '#c9a227' }}>
+                            <Avatar
+                                src={user?.photoProfil}
+                                style={{ background: '#c9a227' }}
+                            >
                                 {user && getInitials(user.nom, user.prenom)}
                             </Avatar>
                             <div>
@@ -222,6 +225,7 @@ const BackOfficeLayout = () => {
                         <NotificationDropdown />
                         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                             <Avatar
+                                src={user?.photoProfil}
                                 style={{ cursor: 'pointer', background: '#c9a227' }}
                             >
                                 {user && getInitials(user.nom, user.prenom)}

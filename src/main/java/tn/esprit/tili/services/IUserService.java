@@ -22,4 +22,6 @@ public interface IUserService {
     void activerUser(int id);
 
     void deleteUser(int id);
+
+    void changePassword(int id, String oldPassword, String newPassword);
 }

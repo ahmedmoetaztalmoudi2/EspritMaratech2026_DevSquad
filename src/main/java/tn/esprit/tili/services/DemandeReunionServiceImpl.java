@@ -3,7 +3,6 @@ package tn.esprit.tili.services;
 import tn.esprit.tili.entities.*;
 import tn.esprit.tili.repositories.DemandeReunionRepository;
 import tn.esprit.tili.repositories.UserRepository;
-import tn.esprit.tili.repositories.ProjetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +19,7 @@ public class DemandeReunionServiceImpl implements IDemandeReunionService {
     private UserRepository userRepository;
 
     @Autowired
-    private ProjetRepository projetRepository;
+    private IReunionService reunionService;
 
     @Autowired
     private INotificationService notificationService;
@@ -154,5 +153,20 @@ public class DemandeReunionServiceImpl implements IDemandeReunionService {
                 "REUNION");
 
         return savedDemande;
+    }
+
+    @Override
+    public Reunion createReunionForDemande(int demandeId, Reunion reunion) {
+        DemandeReunion demande = getDemandeById(demandeId);
+
+        // Créer la réunion via le service dédié using the destinataire as organizer
+        Reunion createdReunion = reunionService.createReunion(reunion, demande.getDestinataire().getIdUser());
+
+        // Lier la réunion à la demande
+        demande.setReunion(createdReunion);
+        demande.setStatut(StatutDemandeReunion.ACCEPTEE); // Force le statut acceptée
+        demandeReunionRepository.save(demande);
+
+        return createdReunion;
     }
 }

@@ -114,6 +114,19 @@ export const refuserDemande = createAsyncThunk(
     }
 );
 
+// Create reunion from demande
+export const createReunionForDemande = createAsyncThunk(
+    'demandesReunion/createReunion',
+    async ({ id, reunion }, { rejectWithValue }) => {
+        try {
+            const response = await api.post(`/demandes-reunion/${id}/create-reunion`, reunion);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.error || error.message);
+        }
+    }
+);
+
 // Delete demande
 export const deleteDemande = createAsyncThunk(
     'demandesReunion/delete',

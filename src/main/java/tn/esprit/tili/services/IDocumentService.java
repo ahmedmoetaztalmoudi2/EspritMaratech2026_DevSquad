@@ -16,9 +16,9 @@ public interface IDocumentService {
 
     List<Document> getAllDocuments();
 
-    Document updateDocument(int id, Document documentDetails);
+    Document updateDocument(int id, Document documentDetails, int userId);
 
-    void deleteDocument(int id);
+    void deleteDocument(int id, int userId);
 
     // Filtres
     List<Document> getDocumentsByType(TypeDocument type);

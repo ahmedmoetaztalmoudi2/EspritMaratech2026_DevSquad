@@ -35,9 +35,9 @@ export const createProjet = createAsyncThunk(
 // Update projet
 export const updateProjet = createAsyncThunk(
     'projets/update',
-    async ({ id, data }, { rejectWithValue }) => {
+    async ({ id, data, userId }, { rejectWithValue }) => {
         try {
-            const response = await api.put(`/projets/${id}`, data);
+            const response = await api.put(`/projets/${id}?userId=${userId}`, data);
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.error || error.message);
@@ -61,9 +61,9 @@ export const updateProjetProgress = createAsyncThunk(
 // Delete projet
 export const deleteProjet = createAsyncThunk(
     'projets/delete',
-    async (id, { rejectWithValue }) => {
+    async ({ id, userId }, { rejectWithValue }) => {
         try {
-            await api.delete(`/projets/${id}`);
+            await api.delete(`/projets/${id}?userId=${userId}`);
             return id;
         } catch (error) {
             return rejectWithValue(error.response?.data?.error || error.message);

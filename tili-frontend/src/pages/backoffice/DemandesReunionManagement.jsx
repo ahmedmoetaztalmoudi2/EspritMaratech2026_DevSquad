@@ -2,55 +2,115 @@
 import React, { useEffect, useState } from 'react';
 import {
     Card, Table, Button, Space, Tag, Modal, Typography, message, Row, Col,
-    Tooltip, Avatar, Empty, Input, Badge, Form,
+    Tooltip, Avatar, Empty, Input, Badge, Form, DatePicker, Select
 } from 'antd';
 import {
     CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, CalendarOutlined,
     ClockCircleOutlined, UserOutlined, EnvironmentOutlined, FileTextOutlined,
-    SearchOutlined, SendOutlined,
+    SearchOutlined, SendOutlined, PlusCircleOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     fetchDemandesByDestinataire,
     fetchDemandesEnAttente,
     accepterDemande,
-    refuserDemande
+    refuserDemande,
+    createReunionForDemande
 } from '../../redux/demandeReunionSlice';
+import { fetchUsers } from '../../redux/userSlice';
 import { formatDateTime, getInitials, getAvatarColor } from '../../utils/helpers';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
 const { Search, TextArea } = Input;
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 const DemandesReunionManagement = () => {
     const [selectedDemande, setSelectedDemande] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isRefuseModalOpen, setIsRefuseModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
     const [refuseForm] = Form.useForm();
+    const [createReunionForm] = Form.useForm();
+
     const [searchText, setSearchText] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
 
     const dispatch = useDispatch();
     const { demandesRecues, isLoading, pendingCount } = useSelector((state) => state.demandesReunion);
     const { user } = useSelector((state) => state.auth);
+    const { users } = useSelector((state) => state.users);
 
     useEffect(() => {
-        if (user?.id) {
-            dispatch(fetchDemandesByDestinataire(user.id));
+        dispatch(fetchUsers());
+        if (user?.idUser) {
+            dispatch(fetchDemandesByDestinataire(user.idUser));
         }
-    }, [dispatch, user?.id]);
+    }, [dispatch, user?.idUser]);
 
     const handleAccepter = async (demande) => {
         try {
             await dispatch(accepterDemande({
                 demandeId: demande.id,
-                chefProjetId: user.id
+                chefProjetId: user.idUser
             })).unwrap();
             message.success('Demande acceptée ! Vous pouvez maintenant créer la réunion.');
-            dispatch(fetchDemandesByDestinataire(user.id));
+            dispatch(fetchDemandesByDestinataire(user.idUser));
         } catch (error) {
             message.error(error || 'Erreur lors de l\'acceptation');
+        }
+    };
+
+    const handleCreateReunionClick = (demande) => {
+        setSelectedDemande(demande);
+        createReunionForm.setFieldsValue({
+            titre: demande.titre,
+            description: demande.description,
+            lieu: demande.lieu,
+            dateRange: demande.dateSouhaitee ? [
+                dayjs(demande.dateSouhaitee),
+                dayjs(demande.dateSouhaitee).add(demande.dureeEstimee || 60, 'minute')
+            ] : [],
+            participantIds: [demande.demandeur?.idUser],
+            ordreDuJour: demande.ordreDuJour
+        });
+        setIsCreateModalOpen(true);
+    };
+
+    const handleCreateReunionSubmit = async (values) => {
+        try {
+            const [dateDebut, dateFin] = values.dateRange;
+
+            // Build participants list (User objects)
+            const selectedParticipants = users.filter(u => values.participantIds?.includes(u.idUser));
+
+            const reunionData = {
+                titre: values.titre,
+                description: values.description,
+                dateDebut: dateDebut.toISOString(),
+                dateFin: dateFin.toISOString(),
+                lieu: values.lieu,
+                statut: 'PLANIFIEE',
+                organisateur: user, // The PM is the organizer
+                participants: selectedParticipants, // Set of users
+                // Include agenda/ordre du jour? Reuse description for now or create new field in Reunion
+            };
+
+            await dispatch(createReunionForDemande({
+                id: selectedDemande.id,
+                reunion: reunionData
+            })).unwrap();
+
+            message.success('Réunion créée avec succès !');
+            setIsCreateModalOpen(false);
+            createReunionForm.resetFields();
+            setSelectedDemande(null);
+            dispatch(fetchDemandesByDestinataire(user.idUser));
+        } catch (error) {
+            message.error(error || 'Erreur lors de la création de la réunion');
         }
     };
 
@@ -63,14 +123,14 @@ const DemandesReunionManagement = () => {
         try {
             await dispatch(refuserDemande({
                 demandeId: selectedDemande.id,
-                chefProjetId: user.id,
+                chefProjetId: user.idUser,
                 motifRefus: values.motifRefus
             })).unwrap();
             message.success('Demande refusée. Le consultant a été notifié.');
             setIsRefuseModalOpen(false);
             refuseForm.resetFields();
             setSelectedDemande(null);
-            dispatch(fetchDemandesByDestinataire(user.id));
+            dispatch(fetchDemandesByDestinataire(user.idUser));
         } catch (error) {
             message.error(error || 'Erreur lors du refus');
         }
@@ -112,7 +172,10 @@ const DemandesReunionManagement = () => {
             key: 'demandeur',
             render: (_, record) => (
                 <Space>
-                    <Avatar style={{ background: getAvatarColor(record.demandeur?.nom) }}>
+                    <Avatar
+                        src={record.demandeur?.photoProfil}
+                        style={{ background: getAvatarColor(record.demandeur?.nom) }}
+                    >
                         {getInitials(record.demandeur?.nom, record.demandeur?.prenom)}
                     </Avatar>
                     <div>
@@ -188,6 +251,26 @@ const DemandesReunionManagement = () => {
                                 />
                             </Tooltip>
                         </>
+                    )}
+                    {record.statut === 'ACCEPTEE' && !record.reunion && (
+                        <Tooltip title="Créer la réunion">
+                            <Button
+                                type="text"
+                                icon={<PlusCircleOutlined />}
+                                style={{ color: '#1e4a8d' }}
+                                onClick={() => handleCreateReunionClick(record)}
+                            />
+                        </Tooltip>
+                    )}
+                    {record.statut === 'ACCEPTEE' && record.reunion && (
+                        <Tooltip title="Réunion créée">
+                            <Button
+                                type="text"
+                                icon={<CheckCircleOutlined />}
+                                disabled
+                                style={{ color: '#10b981' }}
+                            />
+                        </Tooltip>
                     )}
                 </Space>
             ),
@@ -357,7 +440,10 @@ const DemandesReunionManagement = () => {
                             <div style={{ marginBottom: 16 }}>
                                 <Text type="secondary" style={{ fontSize: 12 }}>Demandeur</Text>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                                    <Avatar style={{ background: getAvatarColor(selectedDemande.demandeur?.nom) }}>
+                                    <Avatar
+                                        src={selectedDemande.demandeur?.photoProfil}
+                                        style={{ background: getAvatarColor(selectedDemande.demandeur?.nom) }}
+                                    >
                                         {getInitials(selectedDemande.demandeur?.nom, selectedDemande.demandeur?.prenom)}
                                     </Avatar>
                                     <div>
@@ -469,6 +555,97 @@ const DemandesReunionManagement = () => {
                             <Button onClick={() => setIsRefuseModalOpen(false)}>Annuler</Button>
                             <Button type="primary" danger htmlType="submit" icon={<CloseCircleOutlined />}>
                                 Confirmer le refus
+                            </Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* Create Reunion Modal */}
+            <Modal
+                title="Créer une réunion"
+                open={isCreateModalOpen}
+                onCancel={() => {
+                    setIsCreateModalOpen(false);
+                    createReunionForm.resetFields();
+                }}
+                footer={null}
+                width={700}
+            >
+                <Form
+                    form={createReunionForm}
+                    layout="vertical"
+                    onFinish={handleCreateReunionSubmit}
+                >
+                    <Form.Item
+                        name="titre"
+                        label="Titre de la réunion"
+                        rules={[{ required: true, message: 'Veuillez saisir le titre' }]}
+                    >
+                        <Input placeholder="Ex: Point d'avancement projet" />
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="dateRange"
+                                label="Date et heure"
+                                rules={[{ required: true, message: 'Veuillez sélectionner la date et l\'heure' }]}
+                            >
+                                <RangePicker
+                                    showTime={{ format: 'HH:mm' }}
+                                    format="YYYY-MM-DD HH:mm"
+                                    style={{ width: '100%' }}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="lieu"
+                                label="Lieu / Lien"
+                                rules={[{ required: true, message: 'Veuillez saisir le lieu' }]}
+                            >
+                                <Input prefix={<EnvironmentOutlined />} placeholder="Salle de réunion A ou lien Teams" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Form.Item
+                        name="participantIds"
+                        label="Participants"
+                    >
+                        <Select
+                            mode="multiple"
+                            placeholder="Sélectionner les participants"
+                            optionFilterProp="children"
+                        >
+                            {users.map(u => (
+                                <Option key={u.idUser} value={u.idUser}>
+                                    {u.nom} {u.prenom}
+                                </Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                        name="description"
+                        label="Description"
+                    >
+                        <TextArea rows={3} placeholder="Description de la réunion..." />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="ordreDuJour"
+                        label="Ordre du jour"
+                    >
+                        <TextArea rows={3} placeholder="Points à aborder..." />
+                    </Form.Item>
+
+                    <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+                        <Space>
+                            <Button onClick={() => setIsCreateModalOpen(false)}>Annuler</Button>
+                            <Button type="primary" htmlType="submit" icon={<CheckCircleOutlined />}>
+                                Créer la réunion
                             </Button>
                         </Space>
                     </Form.Item>

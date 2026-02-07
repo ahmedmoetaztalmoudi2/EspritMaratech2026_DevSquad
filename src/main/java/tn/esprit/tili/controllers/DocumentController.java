@@ -4,10 +4,18 @@ import tn.esprit.tili.entities.Document;
 import tn.esprit.tili.entities.TypeDocument;
 import tn.esprit.tili.services.IDocumentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -79,18 +87,19 @@ public class DocumentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateDocument(@PathVariable int id, @RequestBody Document document) {
+    public ResponseEntity<?> updateDocument(@PathVariable int id, @RequestBody Document document,
+            @RequestParam int userId) {
         try {
-            return ResponseEntity.ok(documentService.updateDocument(id, document));
+            return ResponseEntity.ok(documentService.updateDocument(id, document, userId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteDocument(@PathVariable int id) {
+    public ResponseEntity<?> deleteDocument(@PathVariable int id, @RequestParam int userId) {
         try {
-            documentService.deleteDocument(id);
+            documentService.deleteDocument(id, userId);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -120,5 +129,41 @@ public class DocumentController {
     @GetMapping("/search")
     public ResponseEntity<List<Document>> searchDocuments(@RequestParam String keyword) {
         return ResponseEntity.ok(documentService.searchDocuments(keyword));
+    }
+
+    @GetMapping("/download/{id}")
+    public ResponseEntity<Resource> downloadDocument(@PathVariable int id) {
+        try {
+            Document document = documentService.getDocumentById(id);
+            Path filePath = Paths.get(document.getCheminFichier());
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                // Determine content type
+                String contentType = "application/octet-stream";
+
+                // Extract filename from path
+                String filename = filePath.getFileName().toString();
+
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=\"" + document.getTitre() + getFileExtension(filename) + "\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    private String getFileExtension(String filename) {
+        if (filename != null && filename.contains(".")) {
+            return filename.substring(filename.lastIndexOf("."));
+        }
+        return "";
     }
 }

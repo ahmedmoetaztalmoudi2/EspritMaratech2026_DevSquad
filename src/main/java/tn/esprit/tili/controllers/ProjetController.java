@@ -45,18 +45,18 @@ public class ProjetController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProjet(@PathVariable int id, @RequestBody Projet projet) {
+    public ResponseEntity<?> updateProjet(@PathVariable int id, @RequestBody Projet projet, @RequestParam int userId) {
         try {
-            return ResponseEntity.ok(projetService.updateProjet(id, projet));
+            return ResponseEntity.ok(projetService.updateProjet(id, projet, userId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProjet(@PathVariable int id) {
+    public ResponseEntity<?> deleteProjet(@PathVariable int id, @RequestParam int userId) {
         try {
-            projetService.deleteProjet(id);
+            projetService.deleteProjet(id, userId);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

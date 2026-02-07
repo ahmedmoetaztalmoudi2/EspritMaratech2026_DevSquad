@@ -34,6 +34,9 @@ public class Reunion {
     @Column(length = 300)
     private String lieu;
 
+    @Column(name = "lien_meet", length = 300)
+    private String lienMeet;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private StatutReunion statut = StatutReunion.PLANIFIEE;

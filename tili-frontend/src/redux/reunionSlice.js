@@ -35,9 +35,9 @@ export const createReunion = createAsyncThunk(
 
 export const updateReunion = createAsyncThunk(
     'reunions/update',
-    async ({ id, data }, { rejectWithValue }) => {
+    async ({ id, data, userId }, { rejectWithValue }) => {
         try {
-            const response = await api.put(`/reunions/${id}`, data);
+            const response = await api.put(`/reunions/${id}?userId=${userId}`, data);
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.error || error.message);
@@ -47,9 +47,9 @@ export const updateReunion = createAsyncThunk(
 
 export const deleteReunion = createAsyncThunk(
     'reunions/delete',
-    async (id, { rejectWithValue }) => {
+    async ({ id, userId }, { rejectWithValue }) => {
         try {
-            await api.delete(`/reunions/${id}`);
+            await api.delete(`/reunions/${id}?userId=${userId}`);
             return id;
         } catch (error) {
             return rejectWithValue(error.response?.data?.error || error.message);

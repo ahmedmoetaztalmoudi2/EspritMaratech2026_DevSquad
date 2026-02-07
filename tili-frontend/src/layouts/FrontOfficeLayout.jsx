@@ -148,7 +148,10 @@ const FrontOfficeLayout = () => {
                     <NotificationDropdown />
                     <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                         <Space style={{ cursor: 'pointer' }}>
-                            <Avatar style={{ background: '#c9a227' }}>
+                            <Avatar
+                                src={user?.photoProfil}
+                                style={{ background: '#c9a227' }}
+                            >
                                 {user && getInitials(user.nom, user.prenom)}
                             </Avatar>
                             <Text className="user-name-desktop" style={{ fontWeight: 500 }}>

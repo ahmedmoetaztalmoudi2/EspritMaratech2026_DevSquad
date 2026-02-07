@@ -66,9 +66,9 @@ export const uploadDocument = createAsyncThunk(
 // Update document
 export const updateDocument = createAsyncThunk(
     'documents/update',
-    async ({ id, data }, { rejectWithValue }) => {
+    async ({ id, data, userId }, { rejectWithValue }) => {
         try {
-            const response = await api.put(`/documents/${id}`, data);
+            const response = await api.put(`/documents/${id}?userId=${userId}`, data);
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.error || error.message);
@@ -79,9 +79,9 @@ export const updateDocument = createAsyncThunk(
 // Delete document
 export const deleteDocument = createAsyncThunk(
     'documents/delete',
-    async (id, { rejectWithValue }) => {
+    async ({ id, userId }, { rejectWithValue }) => {
         try {
-            await api.delete(`/documents/${id}`);
+            await api.delete(`/documents/${id}?userId=${userId}`);
             return id;
         } catch (error) {
             return rejectWithValue(error.response?.data?.error || error.message);

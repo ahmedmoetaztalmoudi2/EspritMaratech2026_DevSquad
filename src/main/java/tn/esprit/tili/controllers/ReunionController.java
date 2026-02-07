@@ -45,18 +45,19 @@ public class ReunionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateReunion(@PathVariable int id, @RequestBody Reunion reunion) {
+    public ResponseEntity<?> updateReunion(@PathVariable int id, @RequestBody Reunion reunion,
+            @RequestParam int userId) {
         try {
-            return ResponseEntity.ok(reunionService.updateReunion(id, reunion));
+            return ResponseEntity.ok(reunionService.updateReunion(id, reunion, userId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReunion(@PathVariable int id) {
+    public ResponseEntity<?> deleteReunion(@PathVariable int id, @RequestParam int userId) {
         try {
-            reunionService.deleteReunion(id);
+            reunionService.deleteReunion(id, userId);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

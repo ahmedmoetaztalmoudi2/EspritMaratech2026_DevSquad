@@ -39,4 +39,11 @@ public interface ReunionRepository extends JpaRepository<Reunion, Integer> {
 
     // Compter par statut
     long countByStatut(StatutReunion statut);
+
+    // Reunions sans lien meet (pour rappel)
+    @Query("SELECT r FROM Reunion r WHERE r.dateDebut BETWEEN :start AND :end AND LOWER(r.lieu) LIKE CONCAT('%', LOWER(:lieu), '%') AND (r.lienMeet IS NULL OR r.lienMeet = '') AND r.statut = 'PLANIFIEE'")
+    List<Reunion> findReunionsSansLienMeet(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("lieu") String lieu);
 }

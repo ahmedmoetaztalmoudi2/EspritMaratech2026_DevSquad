@@ -1,7 +1,7 @@
 package tn.esprit.tili.services;
 
 import tn.esprit.tili.entities.DemandeReunion;
-import tn.esprit.tili.entities.StatutDemandeReunion;
+import tn.esprit.tili.entities.Reunion;
 import java.util.List;
 
 public interface IDemandeReunionService {
@@ -29,4 +29,6 @@ public interface IDemandeReunionService {
     DemandeReunion accepterDemande(int demandeId, int chefProjetId);
 
     DemandeReunion refuserDemande(int demandeId, int chefProjetId, String motifRefus);
+
+    Reunion createReunionForDemande(int demandeId, Reunion reunion);
 }

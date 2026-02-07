@@ -7,10 +7,11 @@ import {
 import {
     SearchOutlined, DownloadOutlined, EyeOutlined,
     FilePdfOutlined, FileWordOutlined, FileExcelOutlined, FileOutlined,
-    CalendarOutlined, PlusOutlined, InboxOutlined, InfoCircleOutlined
+    CalendarOutlined, PlusOutlined, InboxOutlined, InfoCircleOutlined,
+    EditOutlined, DeleteOutlined
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDocuments, createDocument } from '../../redux/documentSlice';
+import { fetchDocuments, createDocument, updateDocument, deleteDocument } from '../../redux/documentSlice';
 import { fetchProjets } from '../../redux/projetSlice';
 import {
     TYPE_DOCUMENT_LABELS, TYPE_DOCUMENT_COLORS,
@@ -18,6 +19,7 @@ import {
 } from '../../utils/constants';
 import { formatRelativeTime, formatFileSize, getFileExtension } from '../../utils/helpers';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { Popconfirm } from 'antd';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -27,6 +29,7 @@ const MesDocuments = () => {
     const [searchText, setSearchText] = useState('');
     const [typeFilter, setTypeFilter] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingDocument, setEditingDocument] = useState(null);
     const [form] = Form.useForm();
 
     const dispatch = useDispatch();
@@ -48,29 +51,54 @@ const MesDocuments = () => {
         }
     }, [dispatch, userPermissions.canUpload]);
 
-    const handleOpenModal = () => {
+    const handleOpenModal = (doc = null) => {
+        setEditingDocument(doc);
+        if (doc) {
+            form.setFieldsValue(doc);
+        } else {
+            form.resetFields();
+        }
         setIsModalOpen(true);
-        form.resetFields();
     };
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
+        setEditingDocument(null);
         form.resetFields();
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await dispatch(deleteDocument({ id, userId: user?.id || user?.idUser })).unwrap();
+            message.success('Document supprimé avec succès');
+        } catch (error) {
+            message.error('Erreur lors de la suppression');
+        }
     };
 
     const handleSubmit = async (values) => {
         try {
-            const data = {
-                ...values,
-                uploadeur: user,
-                dateUpload: new Date().toISOString(),
-            };
+            if (editingDocument) {
+                const data = {
+                    ...values,
+                    uploadeur: user,
+                    dateUpload: editingDocument.dateUpload,
+                };
+                await dispatch(updateDocument({ id: editingDocument.id, data, userId: user?.id || user?.idUser })).unwrap();
+                message.success('Document modifié avec succès');
+            } else {
+                const data = {
+                    ...values,
+                    uploadeur: user,
+                    dateUpload: new Date().toISOString(),
+                };
 
-            await dispatch(createDocument(data)).unwrap();
-            message.success('Document ajouté avec succès');
+                await dispatch(createDocument(data)).unwrap();
+                message.success('Document ajouté avec succès');
+            }
             handleCloseModal();
         } catch (error) {
-            message.error('Erreur lors de l\'ajout du document');
+            message.error('Erreur lors de l\'opération');
         }
     };
 
@@ -108,14 +136,35 @@ const MesDocuments = () => {
 
     const [viewDocument, setViewDocument] = useState(null);
 
-    const handleDownload = (doc) => {
+    const handleDownload = async (doc) => {
         message.loading({ content: 'Téléchargement en cours...', key: 'download' });
-        setTimeout(() => {
+        try {
+            const response = await fetch(`http://localhost:8080/api/documents/download/${doc.id}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors du téléchargement');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = doc.titre || 'document';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
             message.success({ content: 'Téléchargement terminé', key: 'download' });
-            // In a real app, this would trigger a file download
-            // window.open(doc.cheminFichier, '_blank');
-            console.log(`Downloading ${doc.titre} from ${doc.cheminFichier}`);
-        }, 1000);
+        } catch (error) {
+            console.error('Download error:', error);
+            message.error({ content: 'Erreur lors du téléchargement', key: 'download' });
+        }
     };
 
     const handleView = (doc) => {
@@ -259,6 +308,35 @@ const MesDocuments = () => {
                                                 onClick={() => handleDownload(doc)}
                                             />
                                         </Tooltip>
+
+                                        {/* Owner specific actions */}
+                                        {(user.role === 'RESPONSABLE' || doc.uploadeur?.idUser === (user?.id || user?.idUser)) && (
+                                            <>
+                                                <Tooltip title="Modifier">
+                                                    <Button
+                                                        type="text"
+                                                        size="small"
+                                                        icon={<EditOutlined />}
+                                                        onClick={() => handleOpenModal(doc)}
+                                                    />
+                                                </Tooltip>
+                                                <Popconfirm
+                                                    title="Supprimer ce document ?"
+                                                    onConfirm={() => handleDelete(doc.id)}
+                                                    okText="Oui"
+                                                    cancelText="Non"
+                                                >
+                                                    <Tooltip title="Supprimer">
+                                                        <Button
+                                                            type="text"
+                                                            size="small"
+                                                            danger
+                                                            icon={<DeleteOutlined />}
+                                                        />
+                                                    </Tooltip>
+                                                </Popconfirm>
+                                            </>
+                                        )}
                                     </Space>
                                 </div>
                             </Card>
@@ -271,9 +349,9 @@ const MesDocuments = () => {
                 </Card>
             )}
 
-            {/* Upload Modal */}
+            {/* Upload/Edit Modal */}
             <Modal
-                title="Nouveau document"
+                title={editingDocument ? 'Modifier le document' : 'Nouveau document'}
                 open={isModalOpen}
                 onCancel={handleCloseModal}
                 footer={null}
@@ -286,20 +364,22 @@ const MesDocuments = () => {
                     onFinish={handleSubmit}
                     style={{ marginTop: 16 }}
                 >
-                    <Form.Item name="fichier">
-                        <Dragger
-                            maxCount={1}
-                            beforeUpload={() => false}
-                            style={{ marginBottom: 16 }}
-                        >
-                            <p className="ant-upload-drag-icon">
-                                <InboxOutlined style={{ color: '#1e4a8d', fontSize: 48 }} />
-                            </p>
-                            <p className="ant-upload-text">
-                                Glissez un fichier ici ou cliquez pour sélectionner
-                            </p>
-                        </Dragger>
-                    </Form.Item>
+                    {!editingDocument && (
+                        <Form.Item name="fichier">
+                            <Dragger
+                                maxCount={1}
+                                beforeUpload={() => false}
+                                style={{ marginBottom: 16 }}
+                            >
+                                <p className="ant-upload-drag-icon">
+                                    <InboxOutlined style={{ color: '#1e4a8d', fontSize: 48 }} />
+                                </p>
+                                <p className="ant-upload-text">
+                                    Glissez un fichier ici ou cliquez pour sélectionner
+                                </p>
+                            </Dragger>
+                        </Form.Item>
+                    )}
 
                     <Form.Item
                         name="titre"
@@ -352,7 +432,7 @@ const MesDocuments = () => {
                         <Space>
                             <Button onClick={handleCloseModal}>Annuler</Button>
                             <Button type="primary" htmlType="submit" style={{ background: '#1e4a8d' }}>
-                                Uploader
+                                {editingDocument ? 'Enregistrer' : 'Uploader'}
                             </Button>
                         </Space>
                     </Form.Item>

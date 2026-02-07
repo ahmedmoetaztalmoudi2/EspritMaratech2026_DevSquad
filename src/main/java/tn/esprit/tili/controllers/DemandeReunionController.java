@@ -1,7 +1,7 @@
 package tn.esprit.tili.controllers;
 
 import tn.esprit.tili.entities.DemandeReunion;
-import tn.esprit.tili.entities.StatutDemandeReunion;
+import tn.esprit.tili.entities.Reunion;
 import tn.esprit.tili.services.IDemandeReunionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -106,6 +106,18 @@ public class DemandeReunionController {
             return ResponseEntity.ok(Map.of(
                     "message", "Demande refusee",
                     "demande", demande));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/create-reunion")
+    public ResponseEntity<?> createReunionForDemande(
+            @PathVariable int id,
+            @RequestBody Reunion reunion) {
+        try {
+            Reunion created = demandeReunionService.createReunionForDemande(id, reunion);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

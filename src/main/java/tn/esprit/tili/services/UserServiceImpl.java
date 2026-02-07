@@ -63,6 +63,8 @@ public class UserServiceImpl implements IUserService {
             user.setDateNaissance(userDetails.getDateNaissance());
         if (userDetails.getSexe() != null)
             user.setSexe(userDetails.getSexe());
+        if (userDetails.getPhotoProfil() != null)
+            user.setPhotoProfil(userDetails.getPhotoProfil());
 
         return userRepository.saveAndFlush(user);
     }
@@ -133,5 +135,18 @@ public class UserServiceImpl implements IUserService {
             throw new RuntimeException("Utilisateur non trouvé");
         }
         userRepository.deleteById(id);
+    }
+
+    @Override
+    public void changePassword(int id, String oldPassword, String newPassword) {
+        User user = getUserById(id);
+
+        // Verification simple (comme dans AuthController)
+        if (user.getMotDePasse() != null && !user.getMotDePasse().equals(oldPassword)) {
+            throw new RuntimeException("Ancien mot de passe incorrect");
+        }
+
+        user.setMotDePasse(newPassword);
+        userRepository.save(user);
     }
 }

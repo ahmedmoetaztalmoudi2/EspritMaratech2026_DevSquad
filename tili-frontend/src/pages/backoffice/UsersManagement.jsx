@@ -97,7 +97,8 @@ const UsersManagement = () => {
             render: (_, record) => (
                 <Space>
                     <Avatar
-                        size={40}
+                        size="small"
+                        src={record.photoProfil}
                         style={{ background: getAvatarColor(record.nom) }}
                     >
                         {getInitials(record.nom, record.prenom)}

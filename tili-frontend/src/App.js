@@ -37,6 +37,7 @@ import MesDocuments from './pages/frontoffice/MesDocuments';
 import MesProjets from './pages/frontoffice/MesProjets';
 import MesReunions from './pages/frontoffice/MesReunions';
 import ProfilPage from './pages/frontoffice/ProfilPage';
+import Chatbot from './components/common/Chatbot';
 
 // App Content with Auth Check
 const AppContent = () => {
@@ -47,50 +48,53 @@ const AppContent = () => {
   }, [dispatch]);
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={<LoginPage />} />
+    <>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
 
-      {/* FrontOffice Routes - All authenticated users */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <FrontOfficeLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="mes-documents" element={<MesDocuments />} />
-        <Route path="mes-projets" element={<MesProjets />} />
-        <Route path="mes-reunions" element={<MesReunions />} />
-        <Route path="profil" element={<ProfilPage />} />
-      </Route>
+        {/* FrontOffice Routes - All authenticated users */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <FrontOfficeLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="mes-documents" element={<MesDocuments />} />
+          <Route path="mes-projets" element={<MesProjets />} />
+          <Route path="mes-reunions" element={<MesReunions />} />
+          <Route path="profil" element={<ProfilPage />} />
+        </Route>
 
-      {/* BackOffice Routes - Only RESPONSABLE and CHEF_PROJET */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute allowedRoles={['RESPONSABLE', 'CHEF_PROJET']}>
-            <BackOfficeLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardAdmin />} />
-        <Route path="users" element={<UsersManagement />} />
-        <Route path="documents" element={<DocumentsManagement />} />
-        <Route path="reunions" element={<ReunionsManagement />} />
-        <Route path="demandes-reunion" element={<DemandesReunionManagement />} />
-        <Route path="projets" element={<ProjetsManagement />} />
-        <Route path="historique" element={<HistoriquePage />} />
-        <Route path="profil" element={<ProfilPage />} />
-      </Route>
+        {/* BackOffice Routes - Only RESPONSABLE and CHEF_PROJET */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['RESPONSABLE', 'CHEF_PROJET']}>
+              <BackOfficeLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardAdmin />} />
+          <Route path="users" element={<UsersManagement />} />
+          <Route path="documents" element={<DocumentsManagement />} />
+          <Route path="reunions" element={<ReunionsManagement />} />
+          <Route path="demandes-reunion" element={<DemandesReunionManagement />} />
+          <Route path="projets" element={<ProjetsManagement />} />
+          <Route path="historique" element={<HistoriquePage />} />
+          <Route path="profil" element={<ProfilPage />} />
+        </Route>
 
-      {/* Catch all - redirect to dashboard */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+        {/* Catch all - redirect to dashboard */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+      <Chatbot />
+    </>
   );
 };
 

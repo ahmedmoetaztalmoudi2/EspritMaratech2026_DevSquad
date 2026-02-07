@@ -156,4 +156,16 @@ public class UserController {
     public ResponseEntity<Map<String, String>> test() {
         return ResponseEntity.ok(Map.of("message", "API Users fonctionne"));
     }
+
+    @PutMapping("/{id}/change-password")
+    public ResponseEntity<?> changePassword(@PathVariable int id, @RequestBody Map<String, String> passwords) {
+        try {
+            String oldPassword = passwords.get("oldPassword");
+            String newPassword = passwords.get("newPassword");
+            userService.changePassword(id, oldPassword, newPassword);
+            return ResponseEntity.ok(Map.of("message", "Mot de passe modifié avec succès"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

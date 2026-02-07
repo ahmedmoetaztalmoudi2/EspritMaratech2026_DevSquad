@@ -59,6 +59,7 @@ public class AuthController {
                 "token", token,
                 "user", Map.of(
                         "id", user.getIdUser(),
+                        "idUser", user.getIdUser(),
                         "nom", user.getNom(),
                         "prenom", user.getPrenom(),
                         "email", user.getEmail(),

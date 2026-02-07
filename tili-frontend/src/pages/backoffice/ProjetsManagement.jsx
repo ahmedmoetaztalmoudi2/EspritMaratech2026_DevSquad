@@ -135,7 +135,7 @@ const ProjetsManagement = () => {
             };
 
             if (editingProjet) {
-                await dispatch(updateProjet({ id: editingProjet.id, data })).unwrap();
+                await dispatch(updateProjet({ id: editingProjet.id, data, userId: user?.id || user?.idUser })).unwrap();
                 message.success('Projet modifié avec succès');
             } else {
                 await dispatch(createProjet(data)).unwrap();
@@ -153,7 +153,7 @@ const ProjetsManagement = () => {
             return;
         }
         try {
-            await dispatch(deleteProjet(id)).unwrap();
+            await dispatch(deleteProjet({ id, userId: user?.id || user?.idUser })).unwrap();
             message.success('Projet supprimé');
         } catch (error) {
             message.error('Erreur lors de la suppression');
@@ -212,7 +212,11 @@ const ProjetsManagement = () => {
             key: 'responsable',
             render: (_, record) => record.responsable && (
                 <Space>
-                    <Avatar size="small" style={{ background: getAvatarColor(record.responsable.nom) }}>
+                    <Avatar
+                        size="small"
+                        src={record.responsable.photoProfil}
+                        style={{ background: getAvatarColor(record.responsable.nom) }}
+                    >
                         {getInitials(record.responsable.nom, record.responsable.prenom)}
                     </Avatar>
                     <Text>{record.responsable.prenom} {record.responsable.nom}</Text>
@@ -272,12 +276,13 @@ const ProjetsManagement = () => {
                     <Tooltip title="Voir détails">
                         <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewProjet(record)} />
                     </Tooltip>
-                    {userPermissions.canEdit && (
+                    {/* Record ownership check for Edit/Delete */}
+                    {(userPermissions.canEdit && (!userPermissions.ownOnly || record.responsable?.idUser === (user?.id || user?.idUser))) && (
                         <Tooltip title="Modifier">
                             <Button type="text" icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />
                         </Tooltip>
                     )}
-                    {userPermissions.canDelete && (
+                    {(userPermissions.canDelete && (!userPermissions.ownOnly || record.responsable?.idUser === (user?.id || user?.idUser))) && (
                         <Popconfirm
                             title="Supprimer ce projet ?"
                             onConfirm={() => handleDelete(record.id)}
@@ -300,7 +305,11 @@ const ProjetsManagement = () => {
             key: 'demandeur',
             render: (_, record) => (
                 <Space>
-                    <Avatar size="small" style={{ background: getAvatarColor(record.demandeur?.nom) }}>
+                    <Avatar
+                        size="small"
+                        src={record.demandeur?.photoProfil}
+                        style={{ background: getAvatarColor(record.demandeur?.nom) }}
+                    >
                         {getInitials(record.demandeur?.nom, record.demandeur?.prenom)}
                     </Avatar>
                     <Text>{record.demandeur?.prenom} {record.demandeur?.nom}</Text>

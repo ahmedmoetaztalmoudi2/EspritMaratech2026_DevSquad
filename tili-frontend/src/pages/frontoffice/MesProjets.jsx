@@ -172,6 +172,7 @@ const MesProjets = () => {
                                         <Space>
                                             <Avatar
                                                 size="small"
+                                                src={projet.responsable.photoProfil}
                                                 style={{ background: getAvatarColor(projet.responsable.nom) }}
                                             >
                                                 {getInitials(projet.responsable.nom, projet.responsable.prenom)}

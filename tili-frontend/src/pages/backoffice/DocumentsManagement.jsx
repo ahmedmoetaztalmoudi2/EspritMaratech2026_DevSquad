@@ -71,7 +71,7 @@ const DocumentsManagement = () => {
                     uploadeur: user,
                     dateUpload: new Date().toISOString(),
                 };
-                await dispatch(updateDocument({ id: editingDocument.id, data })).unwrap();
+                await dispatch(updateDocument({ id: editingDocument.id, data, userId: user?.id || user?.idUser })).unwrap();
                 message.success('Document modifié avec succès');
             } else {
                 // Handle file upload
@@ -108,7 +108,7 @@ const DocumentsManagement = () => {
 
     const handleDelete = async (id) => {
         try {
-            await dispatch(deleteDocument(id)).unwrap();
+            await dispatch(deleteDocument({ id, userId: user?.id || user?.idUser })).unwrap();
             message.success('Document supprimé');
         } catch (error) {
             message.error('Erreur lors de la suppression');
@@ -149,14 +149,35 @@ const DocumentsManagement = () => {
 
     const [viewDocument, setViewDocument] = useState(null);
 
-    const handleDownload = (doc) => {
+    const handleDownload = async (doc) => {
         message.loading({ content: 'Téléchargement en cours...', key: 'download' });
-        setTimeout(() => {
+        try {
+            const response = await fetch(`http://localhost:8080/api/documents/download/${doc.id}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors du téléchargement');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = doc.titre || 'document';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
             message.success({ content: 'Téléchargement terminé', key: 'download' });
-            // In a real app, this would trigger a file download
-            // window.open(doc.cheminFichier, '_blank');
-            console.log(`Downloading ${doc.titre} from ${doc.cheminFichier}`);
-        }, 1000);
+        } catch (error) {
+            console.error('Download error:', error);
+            message.error({ content: 'Erreur lors du téléchargement', key: 'download' });
+        }
     };
 
     const handleView = (doc) => {
@@ -222,19 +243,24 @@ const DocumentsManagement = () => {
                     <Tooltip title="Télécharger">
                         <Button type="text" icon={<DownloadOutlined />} onClick={() => handleDownload(record)} />
                     </Tooltip>
-                    <Tooltip title="Modifier">
-                        <Button type="text" icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />
-                    </Tooltip>
-                    <Popconfirm
-                        title="Supprimer ce document ?"
-                        onConfirm={() => handleDelete(record.id)}
-                        okText="Oui"
-                        cancelText="Non"
-                    >
-                        <Tooltip title="Supprimer">
-                            <Button type="text" danger icon={<DeleteOutlined />} />
-                        </Tooltip>
-                    </Popconfirm>
+                    {/* Record ownership check for Edit/Delete (Only RESPONSABLE can edit/delete everything) */}
+                    {(user.role === 'RESPONSABLE' || record.uploadeur?.idUser === (user?.id || user?.idUser)) && (
+                        <>
+                            <Tooltip title="Modifier">
+                                <Button type="text" icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />
+                            </Tooltip>
+                            <Popconfirm
+                                title="Supprimer ce document ?"
+                                onConfirm={() => handleDelete(record.id)}
+                                okText="Oui"
+                                cancelText="Non"
+                            >
+                                <Tooltip title="Supprimer">
+                                    <Button type="text" danger icon={<DeleteOutlined />} />
+                                </Tooltip>
+                            </Popconfirm>
+                        </>
+                    )}
                 </Space>
             ),
         },

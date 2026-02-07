@@ -2,6 +2,8 @@ package tn.esprit.tili.services;
 
 import tn.esprit.tili.entities.Projet;
 import tn.esprit.tili.entities.StatutProjet;
+import tn.esprit.tili.entities.TypeAction;
+import tn.esprit.tili.entities.TypeRole;
 import tn.esprit.tili.entities.User;
 import tn.esprit.tili.repositories.ProjetRepository;
 import tn.esprit.tili.repositories.UserRepository;
@@ -21,6 +23,9 @@ public class ProjetServiceImpl implements IProjetService {
 
     @Autowired
     private INotificationService notificationService;
+
+    @Autowired
+    private IHistoriqueService historiqueService;
 
     @Override
     @Transactional
@@ -49,6 +54,11 @@ public class ProjetServiceImpl implements IProjetService {
                 "Vous avez créé le projet: " + projet.getNom(),
                 "INFO");
         System.out.println("✅ Projet créé ID: " + saved.getId());
+
+        // Log to historique
+        historiqueService.logAction(responsable, TypeAction.CREATION, "PROJET", saved.getId(),
+                "Création du projet: " + projet.getNom());
+
         return saved;
     }
 
@@ -65,8 +75,18 @@ public class ProjetServiceImpl implements IProjetService {
 
     @Override
     @Transactional
-    public Projet updateProjet(int id, Projet projetDetails) {
+    public Projet updateProjet(int id, Projet projetDetails, int userId) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
         return projetRepository.findById(id).map(projet -> {
+            // Vérification des droits: Seul le responsable du projet ou le Responsable TILI
+            // peut modifier
+            if (currentUser.getRole() != TypeRole.RESPONSABLE &&
+                    projet.getResponsable().getIdUser() != userId) {
+                throw new RuntimeException("Vous n'êtes pas autorisé à modifier ce projet");
+            }
+
             projet.setNom(projetDetails.getNom());
             projet.setDescription(projetDetails.getDescription());
             projet.setObjectifs(projetDetails.getObjectifs());
@@ -76,25 +96,46 @@ public class ProjetServiceImpl implements IProjetService {
             projet.setDateFinReelle(projetDetails.getDateFinReelle());
             projet.setPourcentageAvancement(projetDetails.getPourcentageAvancement());
 
-            // Mettre à jour le responsable si fourni
+            // Mettre à jour le responsable si fourni (Seul le RESPONSABLE TILI peut changer
+            // le responsable d'un projet)
             if (projetDetails.getResponsable() != null && projetDetails.getResponsable().getIdUser() != 0) {
-                User responsable = userRepository.findById(projetDetails.getResponsable().getIdUser())
-                        .orElseThrow(() -> new RuntimeException("Responsable non trouvé"));
-                projet.setResponsable(responsable);
+                if (currentUser.getRole() == TypeRole.RESPONSABLE) {
+                    User newResponsable = userRepository.findById(projetDetails.getResponsable().getIdUser())
+                            .orElseThrow(() -> new RuntimeException("Responsable non trouvé"));
+                    projet.setResponsable(newResponsable);
+                }
             }
 
-            return projetRepository.save(projet);
+            Projet saved = projetRepository.save(projet);
+
+            // Log to historique
+            historiqueService.logAction(currentUser, TypeAction.MODIFICATION, "PROJET", saved.getId(),
+                    "Modification du projet: " + saved.getNom());
+
+            return saved;
         }).orElseThrow(() -> new RuntimeException("Projet non trouvé"));
     }
 
     @Override
     @Transactional
-    public void deleteProjet(int id) {
+    public void deleteProjet(int id, int userId) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
         Projet projet = getProjetById(id);
+
+        // Vérification des droits
+        if (currentUser.getRole() != TypeRole.RESPONSABLE &&
+                projet.getResponsable().getIdUser() != userId) {
+            throw new RuntimeException("Vous n'êtes pas autorisé à supprimer ce projet");
+        }
 
         // Soft delete: changer le statut
         projet.setStatut(StatutProjet.ANNULE);
         projetRepository.save(projet);
+
+        // Log to historique
+        historiqueService.logAction(currentUser, TypeAction.SUPPRESSION, "PROJET", projet.getId(),
+                "Suppression du projet: " + projet.getNom());
 
         System.out.println("✅ Projet annulé: " + projet.getNom());
     }

@@ -66,7 +66,7 @@ export const DOCUMENT_UPLOAD_PERMISSIONS = {
     },
 };
 
-// Project permissions - Chef Projet can only manage their own projects
+// Project permissions - Chef Projet and Consultant can only manage their own projects
 export const PROJECT_PERMISSIONS = {
     RESPONSABLE: {
         canCreate: true,
@@ -78,20 +78,20 @@ export const PROJECT_PERMISSIONS = {
     CHEF_PROJET: {
         canCreate: true,
         canEdit: true,
-        canDelete: false,
+        canDelete: true,
         canAssign: true,
         ownOnly: true, // Can only manage projects they created
     },
     CONSULTANT: {
-        canCreate: false,
-        canEdit: false,
-        canDelete: false,
+        canCreate: true,
+        canEdit: true,
+        canDelete: true,
         canAssign: false,
-        ownOnly: false,
+        ownOnly: true,
     },
 };
 
-// Meeting permissions - Chef Projet can only manage their own meetings
+// Meeting permissions - Chef Projet and Consultant can only manage their own meetings
 export const MEETING_PERMISSIONS = {
     RESPONSABLE: {
         canCreate: true,
@@ -103,16 +103,16 @@ export const MEETING_PERMISSIONS = {
     CHEF_PROJET: {
         canCreate: true,
         canEdit: true,
-        canDelete: false,
+        canDelete: true,
         canAddCompteRendu: true,
         ownOnly: true, // Can only manage meetings they created
     },
     CONSULTANT: {
-        canCreate: false,
-        canEdit: false,
-        canDelete: false,
-        canAddCompteRendu: false,
-        ownOnly: false,
+        canCreate: true,
+        canEdit: true,
+        canDelete: true,
+        canAddCompteRendu: true,
+        ownOnly: true,
     },
 };
 

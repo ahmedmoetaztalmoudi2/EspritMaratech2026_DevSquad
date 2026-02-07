@@ -22,6 +22,7 @@ public class User {
     private String prenom;
     private String email;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @Column(name = "mot_de_passe")
     private String motDePasse;
 
@@ -46,6 +47,9 @@ public class User {
 
     @Column(name = "nom_projet_demande", length = 200)
     private String nomProjetDemande;
+
+    @Column(name = "photo_profil", columnDefinition = "LONGTEXT")
+    private String photoProfil;
 
     // ========== SEULEMENT 4 MÉTHODES ESSENTIELLES ==========
 

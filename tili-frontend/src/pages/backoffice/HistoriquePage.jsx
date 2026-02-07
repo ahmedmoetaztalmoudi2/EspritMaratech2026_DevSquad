@@ -1,24 +1,44 @@
 // Historique Page - Activity Logs
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Card, Table, Tag, Typography, Row, Col, Select, DatePicker, Space, Avatar, Input,
+    Card, Table, Tag, Typography, Row, Col, Select, DatePicker, Space, Avatar, Input, Spin,
 } from 'antd';
 import {
     HistoryOutlined, FileTextOutlined, ProjectOutlined, CalendarOutlined,
     UserOutlined, SearchOutlined,
 } from '@ant-design/icons';
-// import { mockActions } from '../../utils/mockData'; // REMOVED
-import { TYPE_ACTION, TYPE_ACTION_LABELS, TYPE_ACTION_COLORS } from '../../utils/constants';
+import { useSelector } from 'react-redux';
+import { TYPE_ACTION_LABELS, TYPE_ACTION_COLORS } from '../../utils/constants';
 import { formatDateTime, getInitials, getAvatarColor } from '../../utils/helpers';
+import api from '../../api/axiosConfig';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 const { Search } = Input;
 
 const HistoriquePage = () => {
+    const { user } = useSelector((state) => state.auth);
     const [typeFilter, setTypeFilter] = useState(null);
     const [searchText, setSearchText] = useState('');
-    const actions = []; // Empty for now as backend support isn't ready
+    const [actions, setActions] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchHistorique = async () => {
+            if (!user) return;
+            setLoading(true);
+            try {
+                const response = await api.get(`/historique?userId=${user.id || user.idUser}`);
+                setActions(response.data);
+            } catch (error) {
+                console.error('Error fetching historique:', error);
+                setActions([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHistorique();
+    }, [user]);
 
     const getEntityIcon = (type) => {
         switch (type) {
@@ -39,18 +59,18 @@ const HistoriquePage = () => {
         const matchesSearch = searchText
             ? action.description?.toLowerCase().includes(searchText.toLowerCase())
             : true;
-        const matchesType = typeFilter ? action.type === typeFilter : true;
+        const matchesType = typeFilter ? action.typeAction === typeFilter : true;
         return matchesSearch && matchesType;
     });
 
     const columns = [
         {
             title: 'Type',
-            dataIndex: 'type',
-            key: 'type',
+            dataIndex: 'typeAction',
+            key: 'typeAction',
             width: 130,
             render: (type) => (
-                <Tag color={TYPE_ACTION_COLORS[type]}>{TYPE_ACTION_LABELS[type]}</Tag>
+                <Tag color={TYPE_ACTION_COLORS[type]}>{TYPE_ACTION_LABELS[type] || type}</Tag>
             ),
         },
         {
@@ -71,6 +91,7 @@ const HistoriquePage = () => {
                 <Space>
                     <Avatar
                         size="small"
+                        src={record.utilisateur.photoProfil}
                         style={{ background: getAvatarColor(record.utilisateur.nom) }}
                     >
                         {getInitials(record.utilisateur.nom, record.utilisateur.prenom)}
@@ -89,27 +110,21 @@ const HistoriquePage = () => {
             defaultSortOrder: 'descend',
         },
         {
-            title: 'IP',
-            dataIndex: 'ipAdresse',
-            key: 'ipAdresse',
+            title: 'Entité',
+            key: 'entite',
             width: 130,
-            render: (ip) => <Text type="secondary" style={{ fontSize: 12 }}>{ip}</Text>,
-        },
-        {
-            title: 'Navigateur',
-            dataIndex: 'userAgent',
-            key: 'userAgent',
-            width: 100,
-            render: (ua) => <Text type="secondary" style={{ fontSize: 12 }}>{ua}</Text>,
+            render: (_, record) => (
+                <Tag>{record.entiteType} #{record.entiteId}</Tag>
+            ),
         },
     ];
 
     // Stats
     const stats = {
-        total: 0,
-        creations: 0,
-        modifications: 0,
-        suppressions: 0,
+        total: actions.length,
+        creations: actions.filter(a => a.typeAction === 'CREATION').length,
+        modifications: actions.filter(a => a.typeAction === 'MODIFICATION').length,
+        suppressions: actions.filter(a => a.typeAction === 'SUPPRESSION').length,
     };
 
     return (
@@ -121,7 +136,11 @@ const HistoriquePage = () => {
                         <HistoryOutlined style={{ marginRight: 12 }} />
                         Historique des Actions
                     </Title>
-                    <Text type="secondary">Traçabilité de toutes les opérations</Text>
+                    <Text type="secondary">
+                        {user?.role === 'RESPONSABLE'
+                            ? "Traçabilité de toutes les opérations"
+                            : "Traçabilité des opérations de vos projets, réunions et documents"}
+                    </Text>
                 </Col>
             </Row>
 
@@ -195,16 +214,19 @@ const HistoriquePage = () => {
                     </Col>
                 </Row>
 
-                <Table
-                    columns={columns}
-                    dataSource={filteredActions}
-                    rowKey="id"
-                    pagination={{
-                        pageSize: 15,
-                        showSizeChanger: true,
-                        showTotal: (total) => `${total} action(s)`,
-                    }}
-                />
+                <Spin spinning={loading}>
+                    <Table
+                        columns={columns}
+                        dataSource={filteredActions}
+                        rowKey="id"
+                        pagination={{
+                            pageSize: 15,
+                            showSizeChanger: true,
+                            showTotal: (total) => `${total} action(s)`,
+                        }}
+                        locale={{ emptyText: 'Aucun historique disponible' }}
+                    />
+                </Spin>
             </Card>
         </div>
     );

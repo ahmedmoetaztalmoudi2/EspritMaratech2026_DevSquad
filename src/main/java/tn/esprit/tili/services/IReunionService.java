@@ -13,9 +13,9 @@ public interface IReunionService {
 
     List<Reunion> getAllReunions();
 
-    Reunion updateReunion(int id, Reunion reunionDetails);
+    Reunion updateReunion(int id, Reunion reunionDetails, int userId);
 
-    void deleteReunion(int id);
+    void deleteReunion(int id, int userId);
 
     // Filtres
     List<Reunion> getReunionsByStatut(StatutReunion statut);

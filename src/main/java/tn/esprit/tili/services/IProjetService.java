@@ -7,18 +7,32 @@ import java.util.List;
 
 public interface IProjetService {
     Projet createProjet(Projet projet, int chefProjetId);
-    Projet updateProjet(int id, Projet projet);
+
+    Projet updateProjet(int id, Projet projet, int userId);
+
     Projet getProjetById(int id);
+
     List<Projet> getAllProjets();
-    void deleteProjet(int id);
+
+    void deleteProjet(int id, int userId);
+
     List<Projet> getProjetsByChefProjet(int chefProjetId);
+
     List<Projet> getProjetsByStatut(StatutProjet statut);
+
     List<Projet> getProjetsByMembre(int userId);
+
     Projet addMembre(int projetId, int userId);
+
     Projet removeMembre(int projetId, int userId);
+
     Projet updateStatut(int projetId, StatutProjet statut);
+
     Projet updateAvancement(int projetId, int pourcentage);
+
     List<Projet> searchProjets(String keyword);
+
     List<Projet> getProjetsEnRetard();
+
     List<Projet> getProjetsAVenir();
 }

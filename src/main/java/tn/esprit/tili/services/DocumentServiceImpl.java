@@ -34,6 +34,9 @@ public class DocumentServiceImpl implements IDocumentService {
     @Autowired
     private INotificationService notificationService;
 
+    @Autowired
+    private IHistoriqueService historiqueService;
+
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
 
@@ -71,6 +74,10 @@ public class DocumentServiceImpl implements IDocumentService {
             // Notification
             notificationService.notifyNewDocument(uploader, savedDoc.getTitre());
 
+            // Log to historique
+            historiqueService.logAction(uploader, TypeAction.TELEVERSEMENT, "DOCUMENT", savedDoc.getId(),
+                    "Upload du document: " + savedDoc.getTitre());
+
             return savedDoc;
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors de l'upload: " + e.getMessage());
@@ -85,7 +92,13 @@ public class DocumentServiceImpl implements IDocumentService {
         document.setUploader(uploader);
         document.setDateUpload(LocalDateTime.now());
 
-        return documentRepository.save(document);
+        Document saved = documentRepository.save(document);
+
+        // Log to historique
+        historiqueService.logAction(uploader, TypeAction.CREATION, "DOCUMENT", saved.getId(),
+                "Création du document: " + saved.getTitre());
+
+        return saved;
     }
 
     @Override
@@ -100,8 +113,17 @@ public class DocumentServiceImpl implements IDocumentService {
     }
 
     @Override
-    public Document updateDocument(int id, Document documentDetails) {
+    public Document updateDocument(int id, Document documentDetails, int userId) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
         return documentRepository.findById(id).map(document -> {
+            // Vérification des droits
+            if (currentUser.getRole() != TypeRole.RESPONSABLE &&
+                    document.getUploader().getIdUser() != userId) {
+                throw new RuntimeException("Vous n'êtes pas autorisé à modifier ce document");
+            }
+
             document.setTitre(documentDetails.getTitre());
             document.setDescription(documentDetails.getDescription());
             document.setType(documentDetails.getType());
@@ -114,21 +136,41 @@ public class DocumentServiceImpl implements IDocumentService {
                 document.setProjet(projet);
             }
 
-            return documentRepository.save(document);
+            Document saved = documentRepository.save(document);
+
+            // Log to historique
+            historiqueService.logAction(currentUser, TypeAction.MODIFICATION, "DOCUMENT", saved.getId(),
+                    "Modification du document: " + saved.getTitre());
+
+            return saved;
         }).orElseThrow(() -> new RuntimeException("Document non trouve"));
     }
 
     @Override
-    public void deleteDocument(int id) {
+    public void deleteDocument(int id, int userId) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
         Document document = getDocumentById(id);
+
+        // Vérification des droits
+        if (currentUser.getRole() != TypeRole.RESPONSABLE &&
+                document.getUploader().getIdUser() != userId) {
+            throw new RuntimeException("Vous n'êtes pas autorisé à supprimer ce document");
+        }
 
         // Supprimer le fichier physique
         try {
-            Path filePath = Paths.get(document.getCheminFichier());
-            Files.deleteIfExists(filePath);
+            if (document.getCheminFichier() != null) {
+                Path filePath = Paths.get(document.getCheminFichier());
+                Files.deleteIfExists(filePath);
+            }
         } catch (IOException e) {
             System.err.println("Erreur suppression fichier: " + e.getMessage());
         }
+
+        // Log to historique
+        historiqueService.logAction(currentUser, TypeAction.SUPPRESSION, "DOCUMENT", document.getId(),
+                "Suppression du document: " + document.getTitre());
 
         documentRepository.deleteById(id);
     }

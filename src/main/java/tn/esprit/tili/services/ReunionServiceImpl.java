@@ -28,6 +28,9 @@ public class ReunionServiceImpl implements IReunionService {
     @Autowired
     private INotificationService notificationService;
 
+    @Autowired
+    private IHistoriqueService historiqueService;
+
     @Override
     public Reunion createReunion(Reunion reunion, int organisateurId) {
         User organisateur = userRepository.findById(organisateurId)
@@ -47,6 +50,10 @@ public class ReunionServiceImpl implements IReunionService {
                     savedReunion.getParticipants());
         }
 
+        // Log to historique
+        historiqueService.logAction(organisateur, TypeAction.CREATION, "REUNION", savedReunion.getId(),
+                "Création de la réunion: " + savedReunion.getTitre());
+
         return savedReunion;
     }
 
@@ -62,13 +69,23 @@ public class ReunionServiceImpl implements IReunionService {
     }
 
     @Override
-    public Reunion updateReunion(int id, Reunion reunionDetails) {
+    public Reunion updateReunion(int id, Reunion reunionDetails, int userId) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
         return reunionRepository.findById(id).map(reunion -> {
+            // Vérification des droits: Organisateur ou Responsable
+            if (currentUser.getRole() != TypeRole.RESPONSABLE &&
+                    reunion.getOrganisateur().getIdUser() != userId) {
+                throw new RuntimeException("Vous n'êtes pas autorisé à modifier cette réunion");
+            }
+
             reunion.setTitre(reunionDetails.getTitre());
             reunion.setDescription(reunionDetails.getDescription());
             reunion.setDateDebut(reunionDetails.getDateDebut());
             reunion.setDateFin(reunionDetails.getDateFin());
             reunion.setLieu(reunionDetails.getLieu());
+            reunion.setLienMeet(reunionDetails.getLienMeet());
             reunion.setOrdreDuJour(reunionDetails.getOrdreDuJour());
 
             if (reunionDetails.getProjet() != null && reunionDetails.getProjet().getId() != 0) {
@@ -77,15 +94,34 @@ public class ReunionServiceImpl implements IReunionService {
                 reunion.setProjet(projet);
             }
 
-            return reunionRepository.save(reunion);
+            Reunion saved = reunionRepository.save(reunion);
+
+            // Log to historique
+            historiqueService.logAction(currentUser, TypeAction.MODIFICATION, "REUNION", saved.getId(),
+                    "Modification de la réunion: " + saved.getTitre());
+
+            return saved;
         }).orElseThrow(() -> new RuntimeException("Reunion non trouvee"));
     }
 
     @Override
-    public void deleteReunion(int id) {
+    public void deleteReunion(int id, int userId) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
         Reunion reunion = getReunionById(id);
+
+        // Vérification des droits
+        if (currentUser.getRole() != TypeRole.RESPONSABLE &&
+                reunion.getOrganisateur().getIdUser() != userId) {
+            throw new RuntimeException("Vous n'êtes pas autorisé à supprimer cette réunion");
+        }
+
         reunion.setStatut(StatutReunion.ANNULEE);
         reunionRepository.save(reunion);
+
+        // Log to historique
+        historiqueService.logAction(currentUser, TypeAction.SUPPRESSION, "REUNION", reunion.getId(),
+                "Suppression de la réunion: " + reunion.getTitre());
     }
 
     @Override

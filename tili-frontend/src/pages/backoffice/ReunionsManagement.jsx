@@ -38,6 +38,7 @@ const ReunionsManagement = () => {
     const [activeTab, setActiveTab] = useState('1');
     const [currentDate, setCurrentDate] = useState(dayjs());
     const [form] = Form.useForm();
+    const lieu = Form.useWatch('lieu', form);
     const dispatch = useDispatch();
     const { reunions, isLoading } = useSelector((state) => state.reunions);
     const { users } = useSelector((state) => state.users);
@@ -124,7 +125,7 @@ const ReunionsManagement = () => {
             form.setFieldsValue({
                 ...reunion,
                 dateRange: [dayjs(reunion.dateDebut), dayjs(reunion.dateFin)],
-                participantIds: reunion.participants?.map(p => p.id) || [],
+                participantIds: reunion.participants?.map(p => p.idUser || p.id) || [],
             });
         } else {
             form.resetFields();
@@ -149,14 +150,14 @@ const ReunionsManagement = () => {
             const data = {
                 ...values,
                 organisateurId: user?.id || user?.idUser,
-                dateDebut: dateDebut.toISOString(),
-                dateFin: dateFin.toISOString(),
-                participants: users.filter(u => values.participantIds?.includes(u.id)),
+                dateDebut: dateDebut.format('YYYY-MM-DDTHH:mm:ss'),
+                dateFin: dateFin.format('YYYY-MM-DDTHH:mm:ss'),
+                participants: users.filter(u => values.participantIds?.includes(u.idUser || u.id)),
                 organisateur: user,
             };
 
             if (editingReunion) {
-                await dispatch(updateReunion({ id: editingReunion.id, data })).unwrap();
+                await dispatch(updateReunion({ id: editingReunion.id, data, userId: user?.id || user?.idUser })).unwrap();
                 message.success('Réunion modifiée avec succès');
             } else {
                 await dispatch(createReunion(data)).unwrap();
@@ -174,7 +175,7 @@ const ReunionsManagement = () => {
             return;
         }
         try {
-            await dispatch(deleteReunion(id)).unwrap();
+            await dispatch(deleteReunion({ id, userId: user?.id || user?.idUser })).unwrap();
             message.success('Réunion supprimée');
         } catch (error) {
             message.error('Erreur lors de la suppression');
@@ -244,7 +245,10 @@ const ReunionsManagement = () => {
                 <Avatar.Group maxCount={3} size="small">
                     {record.participants?.map((p, idx) => (
                         <Tooltip title={`${p.prenom} ${p.nom}`} key={idx}>
-                            <Avatar style={{ background: getAvatarColor(p.nom) }}>
+                            <Avatar
+                                src={p.photoProfil}
+                                style={{ background: getAvatarColor(p.nom) }}
+                            >
                                 {getInitials(p.nom, p.prenom)}
                             </Avatar>
                         </Tooltip>
@@ -281,12 +285,13 @@ const ReunionsManagement = () => {
                     <Tooltip title="Voir détails">
                         <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewReunion(record)} />
                     </Tooltip>
-                    {userPermissions.canEdit && (
+                    {/* Record ownership check for Edit/Delete */}
+                    {(userPermissions.canEdit && (!userPermissions.ownOnly || record.organisateur?.idUser === (user?.id || user?.idUser))) && (
                         <Tooltip title="Modifier">
                             <Button type="text" icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />
                         </Tooltip>
                     )}
-                    {userPermissions.canDelete && (
+                    {(userPermissions.canDelete && (!userPermissions.ownOnly || record.organisateur?.idUser === (user?.id || user?.idUser))) && (
                         <Popconfirm
                             title="Supprimer cette réunion ?"
                             onConfirm={() => handleDelete(record.id)}
@@ -469,6 +474,7 @@ const ReunionsManagement = () => {
                                                             <Tooltip title={`${p.prenom} ${p.nom}`} key={idx}>
                                                                 <Avatar
                                                                     size={20}
+                                                                    src={p.photoProfil}
                                                                     style={{
                                                                         background: getAvatarColor(p.nom),
                                                                         fontSize: 9,
@@ -649,6 +655,16 @@ const ReunionsManagement = () => {
                         </Col>
                     </Row>
 
+                    {lieu?.toLowerCase().includes('en ligne') && (
+                        <Form.Item
+                            name="lienMeet"
+                            label="Lien de la réunion (Meet/Teams/Zoom)"
+                            extra="Le lien peut être ajouté maintenant ou plus tard (un rappel sera envoyé 10 minutes avant)."
+                        >
+                            <Input prefix={<EnvironmentOutlined />} placeholder="https://meet.google.com/..." />
+                        </Form.Item>
+                    )}
+
                     <Form.Item
                         name="participantIds"
                         label="Participants"
@@ -658,7 +674,7 @@ const ReunionsManagement = () => {
                             placeholder="Sélectionner les participants"
                             optionFilterProp="label"
                             options={users.map(u => ({
-                                value: u.id,
+                                value: u.idUser || u.id,
                                 label: `${u.prenom} ${u.nom}`,
                             }))}
                         />
@@ -756,6 +772,16 @@ const ReunionsManagement = () => {
                                         <EnvironmentOutlined style={{ color: '#10b981' }} />
                                         <Text strong>{viewingReunion.lieu}</Text>
                                     </div>
+                                    {viewingReunion.lienMeet && (
+                                        <div style={{ marginTop: 8 }}>
+                                            <Text type="secondary" style={{ fontSize: 12 }}>Lien de réunion</Text>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                                <Button type="link" href={viewingReunion.lienMeet} target="_blank" icon={<EnvironmentOutlined />}>
+                                                    Rejoindre la réunion
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </Col>
                             </Row>
 
