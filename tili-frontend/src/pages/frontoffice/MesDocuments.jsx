@@ -11,7 +11,7 @@ import {
     EditOutlined, DeleteOutlined
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDocuments, createDocument, updateDocument, deleteDocument } from '../../redux/documentSlice';
+import { fetchDocuments, createDocument, updateDocument, deleteDocument, uploadDocument, updateDocumentWithFile } from '../../redux/documentSlice';
 import { fetchProjets } from '../../redux/projetSlice';
 import {
     TYPE_DOCUMENT_LABELS, TYPE_DOCUMENT_COLORS,
@@ -79,22 +79,48 @@ const MesDocuments = () => {
     const handleSubmit = async (values) => {
         try {
             if (editingDocument) {
-                const data = {
-                    ...values,
-                    uploadeur: user,
-                    dateUpload: editingDocument.dateUpload,
-                };
-                await dispatch(updateDocument({ id: editingDocument.id, data, userId: user?.id || user?.idUser })).unwrap();
+                if (values.fichier?.file) {
+                    // Update with new file
+                    const uploadData = {
+                        id: editingDocument.id,
+                        file: values.fichier.file,
+                        titre: values.titre,
+                        description: values.description,
+                        type: values.type,
+                        projetId: values.projetId,
+                        userId: user?.id || user?.idUser,
+                        isPublic: false
+                    };
+                    await dispatch(updateDocumentWithFile(uploadData)).unwrap();
+                } else {
+                    // Standard update without file change
+                    const data = {
+                        ...values,
+                        uploadeur: user,
+                        dateUpload: editingDocument.dateUpload,
+                    };
+                    await dispatch(updateDocument({ id: editingDocument.id, data, userId: user?.id || user?.idUser })).unwrap();
+                }
                 message.success('Document modifié avec succès');
             } else {
-                const data = {
-                    ...values,
-                    uploadeur: user,
-                    dateUpload: new Date().toISOString(),
+                // Prepare data for uploadDocument thunk
+                const uploadData = {
+                    file: values.fichier?.file,
+                    titre: values.titre,
+                    description: values.description,
+                    type: values.type,
+                    projetId: values.projetId,
+                    uploaderId: user?.id || user?.idUser,
+                    isPublic: false
                 };
 
-                await dispatch(createDocument(data)).unwrap();
-                message.success('Document ajouté avec succès');
+                if (!uploadData.file) {
+                    message.error('Veuillez sélectionner un fichier');
+                    return;
+                }
+
+                await dispatch(uploadDocument(uploadData)).unwrap();
+                message.success('Document uploadeur avec succès');
             }
             handleCloseModal();
         } catch (error) {
@@ -364,22 +390,27 @@ const MesDocuments = () => {
                     onFinish={handleSubmit}
                     style={{ marginTop: 16 }}
                 >
-                    {!editingDocument && (
-                        <Form.Item name="fichier">
-                            <Dragger
-                                maxCount={1}
-                                beforeUpload={() => false}
-                                style={{ marginBottom: 16 }}
-                            >
-                                <p className="ant-upload-drag-icon">
-                                    <InboxOutlined style={{ color: '#1e4a8d', fontSize: 48 }} />
-                                </p>
-                                <p className="ant-upload-text">
-                                    Glissez un fichier ici ou cliquez pour sélectionner
-                                </p>
-                            </Dragger>
-                        </Form.Item>
-                    )}
+                    <Form.Item
+                        name="fichier"
+                        label={editingDocument ? "Remplacer le fichier (Optionnel)" : "Fichier"}
+                        rules={[{ required: !editingDocument, message: 'Veuillez sélectionner un fichier' }]}
+                    >
+                        <Dragger
+                            maxCount={1}
+                            beforeUpload={() => false}
+                            style={{ background: '#f8fafc', borderRadius: 12, border: '2px dashed #e2e8f0' }}
+                        >
+                            <p className="ant-upload-drag-icon">
+                                <InboxOutlined style={{ color: '#1e4a8d', fontSize: 40 }} />
+                            </p>
+                            <p className="ant-upload-text" style={{ fontSize: 14 }}>
+                                {editingDocument ? "Glissez un nouveau fichier pour le remplacer" : "Glissez un fichier ici ou cliquez pour sélectionner"}
+                            </p>
+                            <p className="ant-upload-hint" style={{ fontSize: 12 }}>
+                                PDF, Word, Excel (Max 10MB)
+                            </p>
+                        </Dragger>
+                    </Form.Item>
 
                     <Form.Item
                         name="titre"

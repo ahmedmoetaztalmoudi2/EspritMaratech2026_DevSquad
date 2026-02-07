@@ -1,6 +1,6 @@
 // BackOffice Layout - Admin Panel with TILI Logo
 import React, { useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Badge, Typography, Space, Button } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Badge, Typography, Space, Button, Switch } from 'antd';
 import {
     DashboardOutlined,
     UserOutlined,
@@ -13,12 +13,17 @@ import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
     SettingOutlined,
+    AudioOutlined,
+    AudioMutedOutlined,
+    BulbOutlined,
+    BulbFilled,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import { getInitials, getAvatarColor } from '../utils/helpers';
 import NotificationDropdown from '../components/common/NotificationDropdown';
+import { toggleDarkMode, toggleVoiceActive } from '../redux/uiSlice';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -29,6 +34,7 @@ const BackOfficeLayout = () => {
     const location = useLocation();
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
+    const { isDarkMode, isVoiceActive } = useSelector((state) => state.ui);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -99,6 +105,8 @@ const BackOfficeLayout = () => {
                 collapsible
                 collapsed={collapsed}
                 width={260}
+                role="navigation"
+                aria-label="Menu latéral d'administration"
                 style={{
                     background: 'linear-gradient(180deg, #1e4a8d 0%, #153a6e 100%)',
                     boxShadow: '2px 0 8px rgba(0, 0, 0, 0.15)',
@@ -198,13 +206,15 @@ const BackOfficeLayout = () => {
 
             <Layout>
                 <Header
+                    role="banner"
                     style={{
                         padding: '0 24px',
-                        background: '#fff',
+                        background: isDarkMode ? '#1e293b' : '#fff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         boxShadow: '0 1px 4px rgba(0, 0, 0, 0.08)',
+                        borderBottom: isDarkMode ? '1px solid #334155' : 'none',
                         position: 'sticky',
                         top: 0,
                         zIndex: 100,
@@ -216,12 +226,31 @@ const BackOfficeLayout = () => {
                             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                             onClick={() => setCollapsed(!collapsed)}
                             style={{ fontSize: 18 }}
+                            aria-label={collapsed ? "Développer le menu" : "Réduire le menu"}
                         />
                         <Text strong style={{ fontSize: 18, color: '#1e4a8d' }}>
                             {menuItems.find(item => item.key === location.pathname)?.label || 'Administration'}
                         </Text>
                     </Space>
                     <Space size={16}>
+                        <Space size={8}>
+                            <Switch
+                                checked={isVoiceActive}
+                                onChange={() => dispatch(toggleVoiceActive())}
+                                checkedChildren={<AudioOutlined />}
+                                unCheckedChildren={<AudioMutedOutlined />}
+                                title="Activer l'assistant vocal"
+                                aria-label="Activer l'assistant vocal"
+                            />
+                            <Switch
+                                checked={isDarkMode}
+                                onChange={() => dispatch(toggleDarkMode())}
+                                checkedChildren={<BulbFilled />}
+                                unCheckedChildren={<BulbOutlined />}
+                                title="Mode sombre"
+                                aria-label="Passer au mode sombre"
+                            />
+                        </Space>
                         <NotificationDropdown />
                         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                             <Avatar
@@ -235,6 +264,8 @@ const BackOfficeLayout = () => {
                 </Header>
 
                 <Content
+                    id="main-content"
+                    role="main"
                     style={{
                         margin: 24,
                         padding: 24,

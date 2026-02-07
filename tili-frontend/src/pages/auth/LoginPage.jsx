@@ -3,7 +3,7 @@ import { Form, Input, Button, Typography, message, Space, Row, Col, Select, Date
 import { UserOutlined, LockOutlined, GoogleOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, register, clearError } from '../../redux/authSlice';
+import { login, register, loginGoogle, clearError } from '../../redux/authSlice';
 import { canAccessBackoffice } from '../../utils/helpers';
 
 const { Title, Text } = Typography;
@@ -59,12 +59,64 @@ const LoginPage = () => {
         }
     };
 
-    const handleGoogleLogin = () => {
-        message.info('Connexion avec Gmail non implémentée (Demo)');
+    const handleGoogleLoginResponse = async (response) => {
+        try {
+            // Decode the JWT credential from Google
+            const base64Url = response.credential.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            const { email, family_name, given_name, picture } = JSON.parse(jsonPayload);
+
+            const googleData = {
+                email,
+                nom: family_name,
+                prenom: given_name,
+                photoProfil: picture
+            };
+
+            await dispatch(loginGoogle(googleData)).unwrap();
+            message.success('Connexion Google réussie !');
+        } catch (err) {
+            message.error(err || 'Erreur lors de la connexion Google');
+        }
     };
 
+    useEffect(() => {
+        // Initialize Google Identity Services
+        /* global google */
+        const initializeGoogle = () => {
+            if (window.google) {
+                google.accounts.id.initialize({
+                    // Note: In production, use your own Client ID from Google Cloud Console
+                    client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || "75385610540-v2i2lq5mll987c67j6h1sh18m2n07k9p.apps.googleusercontent.com",
+                    callback: handleGoogleLoginResponse
+                });
+
+                // Render the native button into the overlay container
+                google.accounts.id.renderButton(
+                    document.getElementById("googleButtonContainer"),
+                    { theme: "outline", size: "large", width: 400 }
+                );
+            }
+        };
+
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = initializeGoogle;
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
+
     return (
-        <div style={{
+        <div id="main-content" style={{
             height: '100vh',
             width: '100vw',
             position: 'relative',
@@ -108,10 +160,10 @@ const LoginPage = () => {
                     style={{ width: '100%', maxWidth: '400px' }}
                 >
                     <Form.Item name="email" rules={[{ required: true, type: 'email', message: 'Email invalide' }]}>
-                        <Input prefix={<MailOutlined />} placeholder="Email" style={{ borderRadius: 8, height: 50 }} />
+                        <Input prefix={<MailOutlined />} placeholder="Email" aria-label="Email" style={{ borderRadius: 8, height: 50 }} />
                     </Form.Item>
                     <Form.Item name="password" rules={[{ required: true, message: 'Mot de passe requis' }]}>
-                        <Input.Password prefix={<LockOutlined />} placeholder="Mot de passe" style={{ borderRadius: 8, height: 50 }} />
+                        <Input.Password prefix={<LockOutlined />} placeholder="Mot de passe" aria-label="Mot de passe" style={{ borderRadius: 8, height: 50 }} />
                     </Form.Item>
 
                     <Form.Item>
@@ -123,17 +175,32 @@ const LoginPage = () => {
                     </Form.Item>
                 </Form>
 
-                <Button
-                    icon={<GoogleOutlined />}
-                    onClick={handleGoogleLogin}
-                    block
-                    style={{
-                        maxWidth: '400px', height: 50, borderRadius: 8, marginTop: 10,
-                        borderColor: '#db4437', color: '#db4437', fontWeight: 500, fontSize: '1rem'
-                    }}
-                >
-                    Connecter avec Gmail
-                </Button>
+                <div style={{ position: 'relative', width: '100%', maxWidth: '400px', margin: '10px auto 0' }}>
+                    <Button
+                        icon={<GoogleOutlined />}
+                        block
+                        aria-hidden="true"
+                        style={{
+                            height: 50, borderRadius: 8,
+                            borderColor: '#db4437', color: '#db4437', fontWeight: 500, fontSize: '1rem'
+                        }}
+                    >
+                        Connecter avec Gmail
+                    </Button>
+                    {/* Native Google button hiddenly overlayed */}
+                    <div
+                        id="googleButtonContainer"
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            opacity: 0,
+                            overflow: 'hidden'
+                        }}
+                    />
+                </div>
 
                 <div style={{ marginTop: 30 }}>
                     <Text type="secondary" style={{ fontSize: '1rem' }}>Pas encore de compte ? </Text>
@@ -179,18 +246,18 @@ const LoginPage = () => {
                     <Row gutter={12}>
                         <Col span={12}>
                             <Form.Item name="prenom" rules={[{ required: true, message: 'Prénom requis' }]} style={{ marginBottom: 12 }}>
-                                <Input prefix={<UserOutlined />} placeholder="Prénom" style={{ borderRadius: 6 }} />
+                                <Input prefix={<UserOutlined />} placeholder="Prénom" aria-label="Prénom" style={{ borderRadius: 6 }} />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
                             <Form.Item name="nom" rules={[{ required: true, message: 'Nom requis' }]} style={{ marginBottom: 12 }}>
-                                <Input placeholder="Nom" style={{ borderRadius: 6 }} />
+                                <Input placeholder="Nom" aria-label="Nom" style={{ borderRadius: 6 }} />
                             </Form.Item>
                         </Col>
                     </Row>
 
                     <Form.Item name="email" rules={[{ required: true, type: 'email', message: 'Email invalide' }]} style={{ marginBottom: 12 }}>
-                        <Input prefix={<MailOutlined />} placeholder="Email" style={{ borderRadius: 6 }} />
+                        <Input prefix={<MailOutlined />} placeholder="Email" aria-label="Email inscription" style={{ borderRadius: 6 }} />
                     </Form.Item>
 
                     <Row gutter={12}>
@@ -210,11 +277,11 @@ const LoginPage = () => {
                     </Row>
 
                     <Form.Item name="tel" style={{ marginBottom: 12 }}>
-                        <Input prefix={<PhoneOutlined />} placeholder="Téléphone" style={{ borderRadius: 6 }} />
+                        <Input prefix={<PhoneOutlined />} placeholder="Téléphone" aria-label="Téléphone" style={{ borderRadius: 6 }} />
                     </Form.Item>
 
                     <Form.Item name="motDePasse" rules={[{ required: true, message: 'Mot de passe requis' }]} style={{ marginBottom: 12 }}>
-                        <Input.Password prefix={<LockOutlined />} placeholder="Mot de passe" style={{ borderRadius: 6 }} />
+                        <Input.Password prefix={<LockOutlined />} placeholder="Mot de passe" aria-label="Mot de passe inscription" style={{ borderRadius: 6 }} />
                     </Form.Item>
 
                     <Form.Item
@@ -233,7 +300,7 @@ const LoginPage = () => {
                             }),
                         ]}
                     >
-                        <Input.Password prefix={<LockOutlined />} placeholder="Confirmer le mot de passe" style={{ borderRadius: 6 }} />
+                        <Input.Password prefix={<LockOutlined />} placeholder="Confirmer le mot de passe" aria-label="Confirmer le mot de passe" style={{ borderRadius: 6 }} />
                     </Form.Item>
 
                     <Form.Item style={{ marginBottom: 8 }}>

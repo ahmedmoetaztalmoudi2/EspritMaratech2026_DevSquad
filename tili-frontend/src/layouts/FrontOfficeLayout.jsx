@@ -1,6 +1,6 @@
 // FrontOffice Layout - User Interface with TILI Logo
 import React, { useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Badge, Typography, Space, Button } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Badge, Typography, Space, Button, Switch } from 'antd';
 import {
     DashboardOutlined,
     FileTextOutlined,
@@ -12,12 +12,17 @@ import {
     SettingOutlined,
     MenuOutlined,
     CloseOutlined,
+    AudioOutlined,
+    AudioMutedOutlined,
+    BulbOutlined,
+    BulbFilled,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import { getInitials, getAvatarColor, canAccessBackoffice } from '../utils/helpers';
 import NotificationDropdown from '../components/common/NotificationDropdown';
+import { toggleDarkMode, toggleVoiceActive } from '../redux/uiSlice';
 
 const { Header, Content, Footer } = Layout;
 const { Text } = Typography;
@@ -28,6 +33,7 @@ const FrontOfficeLayout = () => {
     const location = useLocation();
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
+    const { isDarkMode, isVoiceActive } = useSelector((state) => state.ui);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -85,6 +91,7 @@ const FrontOfficeLayout = () => {
     return (
         <Layout style={{ minHeight: '100vh' }}>
             <Header
+                role="banner"
                 style={{
                     position: 'sticky',
                     top: 0,
@@ -99,6 +106,12 @@ const FrontOfficeLayout = () => {
                     height: 64,
                 }}
             >
+                <div
+                    style={{ display: 'none' }}
+                    id="nav-description"
+                >
+                    Menu de navigation principal
+                </div>
                 {/* Logo */}
                 <div
                     style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: 12 }}
@@ -141,10 +154,30 @@ const FrontOfficeLayout = () => {
                         background: 'transparent',
                     }}
                     className="desktop-menu"
+                    role="navigation"
+                    aria-label="Navigation principale"
                 />
 
                 {/* Right Actions */}
                 <Space size={16}>
+                    <Space size={8}>
+                        <Switch
+                            checked={isVoiceActive}
+                            onChange={() => dispatch(toggleVoiceActive())}
+                            checkedChildren={<AudioOutlined />}
+                            unCheckedChildren={<AudioMutedOutlined />}
+                            title="Assistant vocal"
+                            aria-label="Activer l'assistant vocal"
+                        />
+                        <Switch
+                            checked={isDarkMode}
+                            onChange={() => dispatch(toggleDarkMode())}
+                            checkedChildren={<BulbFilled />}
+                            unCheckedChildren={<BulbOutlined />}
+                            title="Mode sombre"
+                            aria-label="Passer au mode sombre"
+                        />
+                    </Space>
                     <NotificationDropdown />
                     <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                         <Space style={{ cursor: 'pointer' }}>
@@ -165,6 +198,8 @@ const FrontOfficeLayout = () => {
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                         style={{ display: 'none' }}
                         className="mobile-menu-button"
+                        aria-label="Ouvrir le menu mobile"
+                        aria-expanded={mobileMenuOpen}
                     />
                 </Space>
             </Header>
@@ -196,6 +231,8 @@ const FrontOfficeLayout = () => {
             )}
 
             <Content
+                id="main-content"
+                role="main"
                 style={{
                     padding: '24px',
                     background: '#f5f7fa',
@@ -208,6 +245,7 @@ const FrontOfficeLayout = () => {
             </Content>
 
             <Footer
+                role="contentinfo"
                 style={{
                     textAlign: 'center',
                     background: '#1e4a8d',

@@ -650,7 +650,7 @@ const MesReunions = () => {
                             optionFilterProp="children"
                         >
                             {users
-                                .filter(u => u.role === 'CHEF_PROJET' || u.role === 'RESPONSABLE')
+                                .filter(u => u.role === 'CHEF_PROJET')
                                 .map(u => (
                                     <Select.Option key={u.idUser || u.id} value={u.idUser || u.id}>
                                         {u.prenom} {u.nom} ({u.role})

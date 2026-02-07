@@ -8,6 +8,7 @@ import notificationReducer from './notificationSlice';
 import userReducer from './userSlice';
 import dashboardReducer from './dashboardSlice';
 import demandeReunionReducer from './demandeReunionSlice';
+import uiReducer from './uiSlice';
 
 export const store = configureStore({
     reducer: {
@@ -19,6 +20,7 @@ export const store = configureStore({
         users: userReducer,
         dashboard: dashboardReducer,
         demandesReunion: demandeReunionReducer,
+        ui: uiReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

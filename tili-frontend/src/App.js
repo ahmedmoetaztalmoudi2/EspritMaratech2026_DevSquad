@@ -18,6 +18,7 @@ import FrontOfficeLayout from './layouts/FrontOfficeLayout';
 // Common
 import ProtectedRoute from './components/common/ProtectedRoute';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import VoiceAssistant from './components/common/VoiceAssistant';
 
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -38,17 +39,31 @@ import MesProjets from './pages/frontoffice/MesProjets';
 import MesReunions from './pages/frontoffice/MesReunions';
 import ProfilPage from './pages/frontoffice/ProfilPage';
 import Chatbot from './components/common/Chatbot';
+import { useSelector } from 'react-redux';
 
 // App Content with Auth Check
 const AppContent = () => {
   const dispatch = useDispatch();
+  const { isDarkMode } = useSelector((state) => state.ui);
 
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
 
+  // Apply dark mode class to body
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [isDarkMode]);
+
   return (
     <>
+      <a href="#main-content" className="skip-link">
+        Passer au contenu principal
+      </a>
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -93,6 +108,7 @@ const AppContent = () => {
         {/* Catch all - redirect to dashboard */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      <VoiceAssistant />
       <Chatbot />
     </>
   );

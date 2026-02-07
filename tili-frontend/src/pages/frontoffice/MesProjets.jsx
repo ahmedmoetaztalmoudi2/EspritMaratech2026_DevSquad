@@ -83,6 +83,7 @@ const MesProjets = () => {
                             icon={<PlusOutlined />}
                             onClick={handleRequestProject}
                             style={{ borderRadius: 8, background: '#c9a227', borderColor: '#c9a227' }}
+                            aria-label="Faire une nouvelle demande de projet"
                         >
                             Demande Projet
                         </Button>

@@ -22,6 +22,25 @@ export const login = createAsyncThunk(
     }
 );
 
+// Login with Google
+export const loginGoogle = createAsyncThunk(
+    'auth/loginGoogle',
+    async (googleData, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/auth/google', googleData);
+            const { token, user } = response.data;
+
+            // Store in localStorage
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(user));
+
+            return { user, token };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.error || 'Erreur de connexion Google');
+        }
+    }
+);
+
 // Register
 export const register = createAsyncThunk(
     'auth/register',
@@ -93,6 +112,23 @@ const authSlice = createSlice({
                 state.error = null;
             })
             .addCase(login.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload;
+                state.isAuthenticated = false;
+            })
+            // Google Login
+            .addCase(loginGoogle.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(loginGoogle.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.user = action.payload.user;
+                state.token = action.payload.token;
+                state.isAuthenticated = true;
+                state.error = null;
+            })
+            .addCase(loginGoogle.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload;
                 state.isAuthenticated = false;

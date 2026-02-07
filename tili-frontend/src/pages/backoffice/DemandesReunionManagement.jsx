@@ -43,6 +43,7 @@ const DemandesReunionManagement = () => {
     const { demandesRecues, isLoading, pendingCount } = useSelector((state) => state.demandesReunion);
     const { user } = useSelector((state) => state.auth);
     const { users } = useSelector((state) => state.users);
+    const { isDarkMode } = useSelector((state) => state.ui);
 
     useEffect(() => {
         dispatch(fetchUsers());
@@ -304,7 +305,8 @@ const DemandesReunionManagement = () => {
                 <Col span={8}>
                     <Card
                         bordered={false}
-                        style={{ borderRadius: 12, background: '#fef9e6', cursor: 'pointer' }}
+                        className="stat-card-waiting"
+                        style={{ borderRadius: 12, background: isDarkMode ? '' : '#fef9e6', cursor: 'pointer' }}
                         onClick={() => setFilterStatus('EN_ATTENTE')}
                     >
                         <Space>
@@ -321,7 +323,8 @@ const DemandesReunionManagement = () => {
                 <Col span={8}>
                     <Card
                         bordered={false}
-                        style={{ borderRadius: 12, background: '#e6f7ed', cursor: 'pointer' }}
+                        className="stat-card-accepted"
+                        style={{ borderRadius: 12, background: isDarkMode ? '' : '#e6f7ed', cursor: 'pointer' }}
                         onClick={() => setFilterStatus('ACCEPTEE')}
                     >
                         <Space>
@@ -338,7 +341,8 @@ const DemandesReunionManagement = () => {
                 <Col span={8}>
                     <Card
                         bordered={false}
-                        style={{ borderRadius: 12, background: '#fef2f2', cursor: 'pointer' }}
+                        className="stat-card-refused"
+                        style={{ borderRadius: 12, background: isDarkMode ? '' : '#fef2f2', cursor: 'pointer' }}
                         onClick={() => setFilterStatus('REFUSEE')}
                     >
                         <Space>

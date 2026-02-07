@@ -76,6 +76,31 @@ export const updateDocument = createAsyncThunk(
     }
 );
 
+// Update document with file
+export const updateDocumentWithFile = createAsyncThunk(
+    'documents/updateWithFile',
+    async ({ id, file, titre, description, type, isPublic, projetId, userId }, { rejectWithValue }) => {
+        try {
+            const formData = new FormData();
+            if (file) formData.append('file', file);
+            formData.append('titre', titre);
+            if (description) formData.append('description', description);
+            formData.append('type', type);
+            formData.append('isPublic', isPublic || false);
+            if (projetId) formData.append('projetId', projetId);
+
+            const response = await api.put(`/documents/${id}/upload?userId=${userId}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.error || error.message);
+        }
+    }
+);
+
 // Delete document
 export const deleteDocument = createAsyncThunk(
     'documents/delete',
@@ -178,6 +203,21 @@ const documentSlice = createSlice({
                 if (index !== -1) {
                     state.documents[index] = action.payload;
                 }
+            })
+            // Update with file
+            .addCase(updateDocumentWithFile.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(updateDocumentWithFile.fulfilled, (state, action) => {
+                state.isLoading = false;
+                const index = state.documents.findIndex(d => d.id === action.payload.id);
+                if (index !== -1) {
+                    state.documents[index] = action.payload;
+                }
+            })
+            .addCase(updateDocumentWithFile.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload;
             })
             // Delete
             .addCase(deleteDocument.fulfilled, (state, action) => {

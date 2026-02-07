@@ -39,6 +39,7 @@ const ProjetsManagement = () => {
     const { projets, requests, isLoading } = useSelector((state) => state.projets);
     const { users } = useSelector((state) => state.users);
     const { user } = useSelector((state) => state.auth);
+    const { isDarkMode } = useSelector((state) => state.ui);
 
     // Get user permissions
     const userPermissions = PROJECT_PERMISSIONS[user?.role] || {
@@ -187,13 +188,13 @@ const ProjetsManagement = () => {
                             width: 40,
                             height: 40,
                             borderRadius: 8,
-                            background: `${STATUT_PROJET_COLORS[record.statut]}20`,
+                            background: isDarkMode ? 'rgba(255,255,255,0.1)' : `${STATUT_PROJET_COLORS[record.statut]}20`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}
                     >
-                        <ProjectOutlined style={{ fontSize: 18, color: STATUT_PROJET_COLORS[record.statut] }} />
+                        <ProjectOutlined style={{ fontSize: 18, color: isDarkMode ? '#3b82f6' : STATUT_PROJET_COLORS[record.statut] }} />
                     </div>
                     <div>
                         <Text strong style={{ cursor: 'pointer' }} onClick={() => handleViewProjet(record)}>
@@ -274,12 +275,12 @@ const ProjetsManagement = () => {
             render: (_, record) => (
                 <Space>
                     <Tooltip title="Voir détails">
-                        <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewProjet(record)} />
+                        <Button type="text" icon={<EyeOutlined />} onClick={() => handleViewProjet(record)} aria-label="Voir les détails du projet" />
                     </Tooltip>
                     {/* Record ownership check for Edit/Delete */}
                     {(userPermissions.canEdit && (!userPermissions.ownOnly || record.responsable?.idUser === (user?.id || user?.idUser))) && (
                         <Tooltip title="Modifier">
-                            <Button type="text" icon={<EditOutlined />} onClick={() => handleOpenModal(record)} />
+                            <Button type="text" icon={<EditOutlined />} onClick={() => handleOpenModal(record)} aria-label="Modifier le projet" />
                         </Tooltip>
                     )}
                     {(userPermissions.canDelete && (!userPermissions.ownOnly || record.responsable?.idUser === (user?.id || user?.idUser))) && (
@@ -290,7 +291,7 @@ const ProjetsManagement = () => {
                             cancelText="Non"
                         >
                             <Tooltip title="Supprimer">
-                                <Button type="text" danger icon={<DeleteOutlined />} />
+                                <Button type="text" danger icon={<DeleteOutlined />} aria-label="Supprimer le projet" />
                             </Tooltip>
                         </Popconfirm>
                     )}

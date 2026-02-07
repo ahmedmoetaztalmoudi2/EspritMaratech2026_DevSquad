@@ -18,6 +18,7 @@ const { Search } = Input;
 
 const HistoriquePage = () => {
     const { user } = useSelector((state) => state.auth);
+    const { isDarkMode } = useSelector((state) => state.ui);
     const [typeFilter, setTypeFilter] = useState(null);
     const [searchText, setSearchText] = useState('');
     const [actions, setActions] = useState([]);
@@ -149,7 +150,7 @@ const HistoriquePage = () => {
                 <Col xs={6}>
                     <Card bordered={false} style={{ borderRadius: 12, textAlign: 'center' }}>
                         <Text type="secondary">Total</Text>
-                        <Title level={3} style={{ margin: '8px 0 0', color: '#1e40af' }}>
+                        <Title level={3} style={{ margin: '8px 0 0', color: isDarkMode ? '#60a5fa' : '#1e40af' }}>
                             {stats.total}
                         </Title>
                     </Card>
@@ -157,7 +158,7 @@ const HistoriquePage = () => {
                 <Col xs={6}>
                     <Card bordered={false} style={{ borderRadius: 12, textAlign: 'center' }}>
                         <Text type="secondary">Créations</Text>
-                        <Title level={3} style={{ margin: '8px 0 0', color: '#10b981' }}>
+                        <Title level={3} style={{ margin: '8px 0 0', color: isDarkMode ? '#34d399' : '#10b981' }}>
                             {stats.creations}
                         </Title>
                     </Card>
@@ -165,7 +166,7 @@ const HistoriquePage = () => {
                 <Col xs={6}>
                     <Card bordered={false} style={{ borderRadius: 12, textAlign: 'center' }}>
                         <Text type="secondary">Modifications</Text>
-                        <Title level={3} style={{ margin: '8px 0 0', color: '#3b82f6' }}>
+                        <Title level={3} style={{ margin: '8px 0 0', color: isDarkMode ? '#60a5fa' : '#3b82f6' }}>
                             {stats.modifications}
                         </Title>
                     </Card>
@@ -173,7 +174,7 @@ const HistoriquePage = () => {
                 <Col xs={6}>
                     <Card bordered={false} style={{ borderRadius: 12, textAlign: 'center' }}>
                         <Text type="secondary">Suppressions</Text>
-                        <Title level={3} style={{ margin: '8px 0 0', color: '#ef4444' }}>
+                        <Title level={3} style={{ margin: '8px 0 0', color: isDarkMode ? '#f87171' : '#ef4444' }}>
                             {stats.suppressions}
                         </Title>
                     </Card>

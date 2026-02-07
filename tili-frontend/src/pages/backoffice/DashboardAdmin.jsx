@@ -24,6 +24,7 @@ const { Title, Text } = Typography;
 const DashboardAdmin = () => {
     const dispatch = useDispatch();
     const { stats, isLoading } = useSelector((state) => state.dashboard);
+    const { isDarkMode } = useSelector((state) => state.ui);
 
     useEffect(() => {
         dispatch(fetchDashboardStats());
@@ -35,29 +36,29 @@ const DashboardAdmin = () => {
             title: 'Utilisateurs',
             value: stats?.totalUsers || 0,
             icon: <TeamOutlined />,
-            color: '#1e40af',
-            bgColor: '#dbeafe',
+            color: isDarkMode ? '#60a5fa' : '#1e40af',
+            bgColor: isDarkMode ? 'rgba(96, 165, 250, 0.15)' : '#dbeafe',
         },
         {
             title: 'Documents',
             value: stats?.totalDocuments || 0,
             icon: <FileTextOutlined />,
-            color: '#059669',
-            bgColor: '#d1fae5',
+            color: isDarkMode ? '#34d399' : '#059669',
+            bgColor: isDarkMode ? 'rgba(52, 211, 153, 0.15)' : '#d1fae5',
         },
         {
             title: 'Projets Actifs',
             value: stats?.projetsActifs || 0,
             icon: <ProjectOutlined />,
-            color: '#7c3aed',
-            bgColor: '#ede9fe',
+            color: isDarkMode ? '#a78bfa' : '#7c3aed',
+            bgColor: isDarkMode ? 'rgba(167, 139, 250, 0.15)' : '#ede9fe',
         },
         {
             title: 'Réunions à Venir',
             value: stats?.reunionsAVenir || 0,
             icon: <CalendarOutlined />,
-            color: '#ea580c',
-            bgColor: '#ffedd5',
+            color: isDarkMode ? '#fb923c' : '#ea580c',
+            bgColor: isDarkMode ? 'rgba(251, 146, 60, 0.15)' : '#ffedd5',
         },
     ];
 
