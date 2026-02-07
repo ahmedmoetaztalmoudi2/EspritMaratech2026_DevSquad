@@ -2,6 +2,7 @@ package tn.esprit.tili.services;
 
 import tn.esprit.tili.entities.User;
 import java.util.List;
+import java.util.Map;
 
 public interface IUserService {
     // ✅ SEULEMENT 7 méthodes
@@ -24,4 +25,6 @@ public interface IUserService {
     void deleteUser(int id);
 
     void changePassword(int id, String oldPassword, String newPassword);
+
+    User loginOrRegisterGoogle(Map<String, String> googleData);
 }

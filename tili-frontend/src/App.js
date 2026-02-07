@@ -38,6 +38,7 @@ import MesDocuments from './pages/frontoffice/MesDocuments';
 import MesProjets from './pages/frontoffice/MesProjets';
 import MesReunions from './pages/frontoffice/MesReunions';
 import ProfilPage from './pages/frontoffice/ProfilPage';
+import NotificationsPage from './pages/common/NotificationsPage';
 import Chatbot from './components/common/Chatbot';
 import { useSelector } from 'react-redux';
 
@@ -83,6 +84,7 @@ const AppContent = () => {
           <Route path="mes-projets" element={<MesProjets />} />
           <Route path="mes-reunions" element={<MesReunions />} />
           <Route path="profil" element={<ProfilPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* BackOffice Routes - Only RESPONSABLE and CHEF_PROJET */}
@@ -103,6 +105,7 @@ const AppContent = () => {
           <Route path="projets" element={<ProjetsManagement />} />
           <Route path="historique" element={<HistoriquePage />} />
           <Route path="profil" element={<ProfilPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* Catch all - redirect to dashboard */}

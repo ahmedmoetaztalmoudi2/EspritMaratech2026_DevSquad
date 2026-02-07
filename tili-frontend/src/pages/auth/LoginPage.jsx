@@ -91,7 +91,7 @@ const LoginPage = () => {
             if (window.google) {
                 google.accounts.id.initialize({
                     // Note: In production, use your own Client ID from Google Cloud Console
-                    client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || "75385610540-v2i2lq5mll987c67j6h1sh18m2n07k9p.apps.googleusercontent.com",
+                    client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
                     callback: handleGoogleLoginResponse
                 });
 

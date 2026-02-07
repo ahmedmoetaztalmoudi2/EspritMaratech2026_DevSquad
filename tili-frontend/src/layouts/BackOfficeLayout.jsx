@@ -77,6 +77,11 @@ const BackOfficeLayout = () => {
             icon: <HistoryOutlined />,
             label: 'Historique',
         },
+        {
+            key: '/admin/notifications',
+            icon: <BellOutlined />,
+            label: 'Notifications',
+        },
     ];
 
     const userMenuItems = [

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -148,5 +149,42 @@ public class UserServiceImpl implements IUserService {
 
         user.setMotDePasse(newPassword);
         userRepository.save(user);
+    }
+
+    @Override
+    public User loginOrRegisterGoogle(Map<String, String> googleData) {
+        String email = googleData.get("email");
+        String nom = googleData.get("nom");
+        String prenom = googleData.get("prenom");
+        String photoProfil = googleData.get("photoProfil");
+
+        if (email == null) {
+            throw new RuntimeException("Email requis");
+        }
+
+        return userRepository.findByEmail(email).map(user -> {
+            if (photoProfil != null && (user.getPhotoProfil() == null || user.getPhotoProfil().isEmpty())) {
+                user.setPhotoProfil(photoProfil);
+                return userRepository.save(user);
+            }
+            return user;
+        }).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setNom(nom != null && !nom.isEmpty() ? nom : "Utilisateur");
+            newUser.setPrenom(prenom != null && !prenom.isEmpty() ? prenom : "Google");
+            newUser.setPhotoProfil(photoProfil);
+            newUser.setActif(true);
+            newUser.setRole(TypeRole.CONSULTANT);
+            newUser.setDateInscription(LocalDateTime.now());
+
+            for (String emailResp : EMAILS_RESPONSABLES) {
+                if (email.equalsIgnoreCase(emailResp)) {
+                    newUser.setRole(TypeRole.RESPONSABLE);
+                    break;
+                }
+            }
+            return userRepository.save(newUser);
+        });
     }
 }

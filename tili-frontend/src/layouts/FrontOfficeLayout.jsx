@@ -61,6 +61,11 @@ const FrontOfficeLayout = () => {
             icon: <CalendarOutlined />,
             label: 'Mes Réunions',
         },
+        {
+            key: '/notifications',
+            icon: <BellOutlined />,
+            label: 'Notifications',
+        },
     ];
 
     const userMenuItems = [

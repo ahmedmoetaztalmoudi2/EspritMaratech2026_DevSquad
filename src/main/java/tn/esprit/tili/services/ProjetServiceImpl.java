@@ -204,7 +204,14 @@ public class ProjetServiceImpl implements IProjetService {
             projet.setDateFinReelle(java.time.LocalDate.now());
         }
 
-        return projetRepository.save(projet);
+        Projet saved = projetRepository.save(projet);
+
+        // Notification aux membres
+        notificationService.notifyProjetUpdate(
+                projetId,
+                "Le statut du projet '" + projet.getNom() + "' a été mis à jour: " + statut.name());
+
+        return saved;
     }
 
     @Override
@@ -215,6 +222,7 @@ public class ProjetServiceImpl implements IProjetService {
         }
 
         Projet projet = getProjetById(projetId);
+        int ancienPourcentage = projet.getPourcentageAvancement();
         projet.setPourcentageAvancement(pourcentage);
 
         // Si 100%, marquer comme terminé si ce n'est pas déjà fait
@@ -223,7 +231,17 @@ public class ProjetServiceImpl implements IProjetService {
             projet.setDateFinReelle(java.time.LocalDate.now());
         }
 
-        return projetRepository.save(projet);
+        Projet saved = projetRepository.save(projet);
+
+        // Notification aux membres si changement significatif (ex: tous les 10% ou vers
+        // 100%)
+        if (pourcentage == 100 || Math.abs(pourcentage - ancienPourcentage) >= 10) {
+            notificationService.notifyProjetUpdate(
+                    projetId,
+                    "L'avancement du projet '" + projet.getNom() + "' est maintenant de " + pourcentage + "%");
+        }
+
+        return saved;
     }
 
     @Override

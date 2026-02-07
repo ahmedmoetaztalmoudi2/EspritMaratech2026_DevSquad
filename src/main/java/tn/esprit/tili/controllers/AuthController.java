@@ -110,65 +110,33 @@ public class AuthController {
 
     @PostMapping("/google")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> data) {
-        String email = data.get("email");
-        String nom = data.get("nom");
-        String prenom = data.get("prenom");
-        String photoProfil = data.get("photoProfil");
+        try {
+            User user = userService.loginOrRegisterGoogle(data);
 
-        if (email == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Email requis"));
-        }
-
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        User user;
-
-        if (userOpt.isPresent()) {
-            user = userOpt.get();
-            // Update profile info if missing or changed
-            if (photoProfil != null && (user.getPhotoProfil() == null || user.getPhotoProfil().isEmpty())) {
-                user.setPhotoProfil(photoProfil);
-                userRepository.save(user);
-            }
-        } else {
-            // Register new user from Google
-            user = new User();
-            user.setEmail(email);
-            user.setNom(nom != null ? nom : "Utilisateur");
-            user.setPrenom(prenom != null ? prenom : "Google");
-            user.setPhotoProfil(photoProfil);
-            user.setActif(true);
-            user.setRole(TypeRole.CONSULTANT); // Default role
-
-            // Link to Emails Responsables logic in service if possible,
-            // but here we just use what createUser would do
-            for (String emailResp : new String[] { "awadhiaziz2@gmail.com", "admin@tili.tn", "responsable@tili.tn" }) {
-                if (email.equalsIgnoreCase(emailResp)) {
-                    user.setRole(TypeRole.RESPONSABLE);
-                    break;
-                }
+            if (Boolean.FALSE.equals(user.getActif())) {
+                return ResponseEntity.status(403).body(Map.of("error", "Votre compte est bloqué"));
             }
 
-            user = userRepository.save(user);
+            String token = UUID.randomUUID().toString();
+
+            return ResponseEntity.ok(Map.of(
+                    "token", token,
+                    "user", Map.of(
+                            "id", user.getIdUser(),
+                            "idUser", user.getIdUser(),
+                            "nom", user.getNom(),
+                            "prenom", user.getPrenom(),
+                            "email", user.getEmail(),
+                            "telephone", user.getTel() != null ? user.getTel() : "",
+                            "role", user.getRole().name(),
+                            "photoProfil", user.getPhotoProfil() != null ? user.getPhotoProfil() : "",
+                            "actif", user.getActif(),
+                            "dateInscription",
+                            user.getDateInscription() != null ? user.getDateInscription().toString() : ""),
+                    "message", "Connexion Google réussie"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
-
-        if (Boolean.FALSE.equals(user.getActif())) {
-            return ResponseEntity.status(403).body(Map.of("error", "Votre compte est bloqué"));
-        }
-
-        String token = UUID.randomUUID().toString();
-
-        return ResponseEntity.ok(Map.of(
-                "token", token,
-                "user", Map.of(
-                        "id", user.getIdUser(),
-                        "idUser", user.getIdUser(),
-                        "nom", user.getNom(),
-                        "prenom", user.getPrenom(),
-                        "email", user.getEmail(),
-                        "role", user.getRole().name(),
-                        "photoProfil", user.getPhotoProfil() != null ? user.getPhotoProfil() : "",
-                        "actif", user.getActif()),
-                "message", "Connexion Google réussie"));
     }
 
     @GetMapping("/check")
