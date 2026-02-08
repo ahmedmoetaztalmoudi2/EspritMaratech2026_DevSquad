@@ -1,8 +1,8 @@
 // Users Management Page
 import React, { useEffect, useState } from 'react';
 import {
-    Card, Table, Button, Space, Tag, Avatar, Modal, Form, Input, Select,
-    Typography, message, Popconfirm, Switch, Tooltip, Row, Col, Input as AntInput, DatePicker,
+    Card, Table, Button, Space, Tag, Avatar, Modal, Form, Select,
+    Typography, message, Popconfirm, Switch, Tooltip, Row, Col, Input as AntInput, DatePicker, Grid,
 } from 'antd';
 import {
     PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
@@ -25,6 +25,8 @@ const UsersManagement = () => {
     const dispatch = useDispatch();
     const { users, isLoading } = useSelector((state) => state.users);
     const { user: currentUser } = useSelector((state) => state.auth);
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
 
     useEffect(() => {
         dispatch(fetchUsers());
@@ -116,6 +118,7 @@ const UsersManagement = () => {
             title: 'Téléphone',
             dataIndex: 'tel',
             key: 'tel',
+            responsive: ['md'],
             render: (phone) => phone || '-',
         },
         {
@@ -153,6 +156,7 @@ const UsersManagement = () => {
             title: 'Inscription',
             dataIndex: 'dateInscription',
             key: 'dateInscription',
+            responsive: ['lg'],
             render: (date) => formatDate(date),
             sorter: (a, b) => new Date(a.dateInscription) - new Date(b.dateInscription),
         },
@@ -212,34 +216,38 @@ const UsersManagement = () => {
     return (
         <div>
             {/* Header */}
-            <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-                <Col>
-                    <Title level={3} style={{ marginBottom: 4 }}>Gestion des Utilisateurs</Title>
+            <Row gutter={[16, 16]} justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={16}>
+                    <Title level={isMobile ? 4 : 3} style={{ marginBottom: 4 }}>Gestion des Utilisateurs</Title>
                     <Text type="secondary">{users.length} utilisateurs enregistrés</Text>
                 </Col>
             </Row>
 
             {/* Search & Table */}
             <Card bordered={false} style={{ borderRadius: 12 }}>
-                <Search
-                    placeholder="Rechercher par nom, prénom ou email..."
-                    allowClear
-                    onChange={(e) => setSearchText(e.target.value)}
-                    style={{ width: 300, marginBottom: 16 }}
-                    prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-                />
+                <div style={{ marginBottom: 16 }}>
+                    <Search
+                        placeholder="Rechercher..."
+                        allowClear
+                        onChange={(e) => setSearchText(e.target.value)}
+                        style={{ width: '100%', maxWidth: 350 }}
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                    />
+                </div>
 
-                <Table
-                    columns={columns}
-                    dataSource={filters}
-                    rowKey="idUser"
-                    loading={isLoading}
-                    pagination={{
-                        pageSize: 10,
-                        showSizeChanger: true,
-                        showTotal: (total) => `${total} utilisateur(s)`,
-                    }}
-                />
+                <div style={{ overflowX: 'auto' }}>
+                    <Table
+                        columns={columns}
+                        dataSource={filters}
+                        rowKey="idUser"
+                        loading={isLoading}
+                        pagination={{
+                            pageSize: 10,
+                            showSizeChanger: true,
+                            showTotal: (total) => `${total} utilisateur(s)`,
+                        }}
+                    />
+                </div>
             </Card>
         </div>
     );

@@ -7,10 +7,12 @@ import tn.esprit.tili.entities.TypeRole;
 import tn.esprit.tili.entities.User;
 import tn.esprit.tili.repositories.ProjetRepository;
 import tn.esprit.tili.repositories.UserRepository;
+import tn.esprit.tili.entities.TypeNotification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ProjetServiceImpl implements IProjetService {
@@ -47,12 +49,27 @@ public class ProjetServiceImpl implements IProjetService {
         Projet saved = projetRepository.save(projet);
 
         // Notification
-        // Notification
+        // Notify the creator (Responsable)
         notificationService.createNotification(
                 responsable,
                 "Projet créé",
                 "Vous avez créé le projet: " + projet.getNom(),
                 "INFO");
+
+        // If the creator is a Consultant, notify the ADMIN (Responsable TILI)
+        if (responsable.getRole() == TypeRole.CONSULTANT) {
+            // Find admin(s) - assuming there's at least one user with role RESPONSABLE
+            List<User> admins = userRepository.findByRole(TypeRole.RESPONSABLE);
+            for (User admin : admins) {
+                notificationService.createNotification(
+                        admin,
+                        "Nouvelle demande de projet",
+                        "Le consultant " + responsable.getPrenom() + " " + responsable.getNom() +
+                                " a fait une demande pour le projet: " + projet.getNom(),
+                        "PROJET");
+            }
+        }
+
         System.out.println("✅ Projet créé ID: " + saved.getId());
 
         // Log to historique
@@ -168,12 +185,7 @@ public class ProjetServiceImpl implements IProjetService {
         Projet updated = projetRepository.save(projet);
 
         // Notification au membre
-        // Notification au membre
-        notificationService.createNotification(
-                user,
-                "Ajout à un projet",
-                "Vous avez été ajouté au projet: " + projet.getNom(),
-                "INFO");
+        notificationService.notifyProjetAssignment(user, projet.getNom());
         return updated;
     }
 
@@ -256,6 +268,100 @@ public class ProjetServiceImpl implements IProjetService {
 
     @Override
     public List<Projet> getProjetsAVenir() {
-        return projetRepository.findProjetsAVenir();
+        return projetRepository.findByStatut(StatutProjet.PLANIFIE);
+    }
+
+    @Override
+    @Transactional
+    public Projet createProjectRequest(Map<String, Object> requestData) {
+        String titre = (String) requestData.get("titre");
+        String description = (String) requestData.get("description");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> demandeurData = (Map<String, Object>) requestData.get("demandeur");
+        int demandeurId = (int) demandeurData.get("idUser");
+
+        User demandeur = userRepository.findById(demandeurId)
+                .orElseThrow(() -> new RuntimeException("Demandeur non trouvé"));
+
+        Projet projet = Projet.builder()
+                .nom(titre)
+                .description(description)
+                .responsable(demandeur)
+                .statut(StatutProjet.DEMANDE_EN_ATTENTE)
+                .pourcentageAvancement(0)
+                .build();
+
+        Projet saved = projetRepository.save(projet);
+
+        // Notifier les admins
+        List<User> admins = userRepository.findByRole(TypeRole.RESPONSABLE);
+        for (User admin : admins) {
+            notificationService.createNotification(
+                    admin,
+                    "Nouvelle Demande de Projet",
+                    "Le consultant " + demandeur.getNomComplet() + " a soumis une nouvelle demande de projet : "
+                            + titre,
+                    TypeNotification.PROJET.name());
+        }
+
+        return saved;
+    }
+
+    @Override
+    public List<Projet> getAllProjectRequests() {
+        return projetRepository.findByStatut(StatutProjet.DEMANDE_EN_ATTENTE);
+    }
+
+    @Override
+    @Transactional
+    public Projet acceptProjectRequest(int requestId) {
+        Projet projet = projetRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
+
+        if (projet.getStatut() != StatutProjet.DEMANDE_EN_ATTENTE) {
+            throw new RuntimeException("Cette demande a déjà été traitée");
+        }
+
+        // 1. Changer le statut du projet
+        projet.setStatut(StatutProjet.ACTIF);
+
+        // 2. Promouvoir le consultant en Chef de Projet si nécessaire
+        User responsable = projet.getResponsable();
+        if (responsable.getRole() == TypeRole.CONSULTANT) {
+            responsable.setRole(TypeRole.CHEF_PROJET); // ou CHEF_DE_PROJET selon l'enum
+            userRepository.save(responsable);
+        }
+
+        Projet saved = projetRepository.save(projet);
+
+        // 3. Notifier l'utilisateur
+        notificationService.createNotification(
+                responsable,
+                "Demande de Projet Acceptee",
+                "Votre demande pour le projet '" + projet.getNom()
+                        + "' a été acceptée. Vous avez été promu Chef de Projet.",
+                TypeNotification.PROJET.name());
+
+        return saved;
+    }
+
+    @Override
+    @Transactional
+    public void rejectProjectRequest(int requestId) {
+        Projet projet = projetRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
+
+        User responsable = projet.getResponsable();
+        String projetNom = projet.getNom();
+
+        projetRepository.delete(projet);
+
+        // Notifier l'utilisateur
+        notificationService.createNotification(
+                responsable,
+                "Demande de Projet Refusee",
+                "Désolé, votre demande pour le projet '" + projetNom + "' a été refusée.",
+                TypeNotification.PROJET.name());
     }
 }

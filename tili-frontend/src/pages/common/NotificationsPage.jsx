@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
     Card, List, Typography, Tag, Button, Space, Empty,
-    Tabs, Badge, Tooltip, Popconfirm, message
+    Tabs, Badge, Tooltip, Popconfirm, message, Modal, Grid
 } from 'antd';
 import {
     CheckCircleOutlined, DeleteOutlined, InfoCircleOutlined,
@@ -27,6 +27,8 @@ const NotificationsPage = () => {
     const [activeTab, setActiveTab] = useState('all');
 
     const userId = user?.id || user?.idUser;
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
 
     useEffect(() => {
         if (userId) {
@@ -37,21 +39,35 @@ const NotificationsPage = () => {
     const handleMarkAsRead = (id) => {
         dispatch(markAsRead(id))
             .unwrap()
-            .then(() => message.success('Notification marquée comme lue'));
+            .then(() => message.success('Notification marquée comme lue'))
+            .catch((err) => message.error('Erreur lors du marquage comme lu: ' + err));
     };
 
     const handleMarkAllAsRead = () => {
         if (userId) {
             dispatch(markAllAsRead(userId))
                 .unwrap()
-                .then(() => message.success('Toutes les notifications sont marquées comme lues'));
+                .then(() => message.success('Toutes les notifications sont marquées comme lues'))
+                .catch((err) => message.error('Erreur lors du marquage global: ' + err));
         }
     };
 
     const handleDelete = (id) => {
         dispatch(deleteNotification(id))
             .unwrap()
-            .then(() => message.success('Notification supprimée'));
+            .then(() => message.success('Notification supprimée'))
+            .catch((err) => message.error('Erreur lors de la suppression: ' + err));
+    };
+
+    const [selectedNotification, setSelectedNotification] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    const handleViewDetails = (notification) => {
+        setSelectedNotification(notification);
+        setIsModalVisible(true);
+        if (!notification.lu) {
+            handleMarkAsRead(notification.id);
+        }
     };
 
     const filteredNotifications = notifications.filter(n => {
@@ -62,9 +78,19 @@ const NotificationsPage = () => {
 
     const getNotificationIcon = (type) => {
         switch (type) {
-            case 'URGENT': return <InfoCircleOutlined style={{ color: '#ef4444' }} />;
-            case 'REUNION': return <BellOutlined style={{ color: '#8b5cf6' }} />;
-            case 'PROJET': return <CheckCircleOutlined style={{ color: '#10b981' }} />;
+            case 'URGENT':
+            case 'ALERTE':
+            case 'ERREUR':
+                return <InfoCircleOutlined style={{ color: '#ef4444' }} />;
+            case 'REUNION':
+            case 'RAPPEL':
+                return <BellOutlined style={{ color: '#f59e0b' }} />;
+            case 'PROJET':
+                return <CheckCircleOutlined style={{ color: '#10b981' }} />;
+            case 'DOCUMENT':
+                return <EyeOutlined style={{ color: '#3b82f6' }} />;
+            case 'SUCCES':
+                return <CheckCircleOutlined style={{ color: '#16a34a' }} />;
             default: return <InfoCircleOutlined style={{ color: '#3b82f6' }} />;
         }
     };
@@ -74,16 +100,24 @@ const NotificationsPage = () => {
     }
 
     return (
-        <div style={{ padding: '0 20px' }}>
-            <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: isMobile ? '0' : '0 20px' }}>
+            <div style={{
+                marginBottom: 24,
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                justifyContent: 'space-between',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                gap: 16
+            }}>
                 <div>
-                    <Title level={3} style={{ marginBottom: 4 }}>Centre de Notifications</Title>
+                    <Title level={isMobile ? 4 : 3} style={{ marginBottom: 4 }}>Centre de Notifications</Title>
                     <Text type="secondary">Gérez vos alertes et informations système</Text>
                 </div>
                 {unreadCount > 0 && (
                     <Button
                         icon={<CheckCircleOutlined />}
                         onClick={handleMarkAllAsRead}
+                        style={{ width: isMobile ? '100%' : 'auto' }}
                     >
                         Tout marquer comme lu
                     </Button>
@@ -133,16 +167,14 @@ const NotificationsPage = () => {
                                 transition: 'all 0.3s'
                             }}
                             actions={[
-                                !item.lu && (
-                                    <Tooltip title="Marquer comme lu">
-                                        <Button
-                                            type="text"
-                                            icon={<EyeOutlined />}
-                                            onClick={() => handleMarkAsRead(item.id)}
-                                            style={{ color: '#3b82f6' }}
-                                        />
-                                    </Tooltip>
-                                ),
+                                <Tooltip title="Voir détails">
+                                    <Button
+                                        type="text"
+                                        icon={<EyeOutlined />}
+                                        onClick={() => handleViewDetails(item)}
+                                        style={{ color: '#3b82f6' }}
+                                    />
+                                </Tooltip>,
                                 <Popconfirm
                                     title="Supprimer cette notification ?"
                                     onConfirm={() => handleDelete(item.id)}
@@ -200,6 +232,39 @@ const NotificationsPage = () => {
                     )}
                 />
             </Card>
+
+            <Modal
+                title={
+                    <Space>
+                        {selectedNotification && getNotificationIcon(selectedNotification.type)}
+                        <span>{selectedNotification?.titre}</span>
+                    </Space>
+                }
+                open={isModalVisible}
+                onOk={() => setIsModalVisible(false)}
+                onCancel={() => setIsModalVisible(false)}
+                footer={[
+                    <Button key="close" type="primary" onClick={() => setIsModalVisible(false)}>
+                        Fermer
+                    </Button>
+                ]}
+            >
+                {selectedNotification && (
+                    <div style={{ padding: '10px 0' }}>
+                        <div style={{ marginBottom: 16 }}>
+                            <Tag color={TYPE_NOTIFICATION_COLORS[selectedNotification.type]}>
+                                {selectedNotification.type}
+                            </Tag>
+                            <Text type="secondary" style={{ marginLeft: 8 }}>
+                                {formatDateTime(selectedNotification.dateEnvoi)}
+                            </Text>
+                        </div>
+                        <Typography.Paragraph style={{ fontSize: 16 }}>
+                            {selectedNotification.message}
+                        </Typography.Paragraph>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 };

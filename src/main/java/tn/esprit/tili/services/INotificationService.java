@@ -1,7 +1,6 @@
 package tn.esprit.tili.services;
 
-import tn.esprit.tili.entities.Notification;
-import tn.esprit.tili.entities.User;
+import tn.esprit.tili.entities.*;
 import java.util.List;
 import java.util.Set;
 
@@ -31,7 +30,13 @@ public interface INotificationService {
     // Notifications systeme
     void notifyNewDocument(User uploader, String documentTitre);
 
+    void notifyNewDocumentToProjectMembers(User uploader, String documentTitre, int projetId);
+
     void notifyNewReunion(User organisateur, String reunionTitre, Set<User> participants);
 
+    void notifyUpcomingReunion(Reunion reunion, User participant);
+
     void notifyProjetUpdate(int projetId, String message);
+
+    void notifyProjetAssignment(User membre, String projetNom);
 }

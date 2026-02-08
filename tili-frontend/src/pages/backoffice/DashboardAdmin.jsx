@@ -1,6 +1,6 @@
 // Admin Dashboard Page
 import React, { useEffect } from 'react';
-import { Row, Col, Card, Typography, Table, Tag, Space, Empty, Spin } from 'antd';
+import { Row, Col, Card, Typography, Table, Tag, Space, Empty, Spin, Grid } from 'antd';
 import {
     TeamOutlined,
     FileTextOutlined,
@@ -25,6 +25,9 @@ const DashboardAdmin = () => {
     const dispatch = useDispatch();
     const { stats, isLoading } = useSelector((state) => state.dashboard);
     const { isDarkMode } = useSelector((state) => state.ui);
+
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
 
     useEffect(() => {
         dispatch(fetchDashboardStats());
@@ -140,14 +143,14 @@ const DashboardAdmin = () => {
         <div>
             {/* Page Header */}
             <div style={{ marginBottom: 24 }}>
-                <Title level={3} style={{ marginBottom: 4 }}>Tableau de Bord</Title>
+                <Title level={isMobile ? 4 : 3} style={{ marginBottom: 4 }}>Tableau de Bord</Title>
                 <Text type="secondary">Vue d'ensemble de l'activité TILI</Text>
             </div>
 
             {/* Stats Cards */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                 {statsCards.map((stat, index) => (
-                    <Col xs={12} sm={12} md={6} key={index}>
+                    <Col xs={24} sm={12} md={6} key={index}>
                         <Card
                             bordered={false}
                             style={{

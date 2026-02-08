@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import {
     Card, Table, Button, Space, Tag, Modal, Typography, message, Row, Col,
-    Tooltip, Avatar, Empty, Input, Badge, Form, DatePicker, Select
+    Tooltip, Avatar, Empty, Input, Badge, Form, DatePicker, Select, Grid
 } from 'antd';
 import {
     CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, CalendarOutlined,
@@ -44,6 +44,8 @@ const DemandesReunionManagement = () => {
     const { user } = useSelector((state) => state.auth);
     const { users } = useSelector((state) => state.users);
     const { isDarkMode } = useSelector((state) => state.ui);
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
 
     useEffect(() => {
         dispatch(fetchUsers());
@@ -205,6 +207,7 @@ const DemandesReunionManagement = () => {
         {
             title: 'Date souhaitée',
             key: 'dateSouhaitee',
+            responsive: ['md'],
             render: (_, record) => (
                 <Space direction="vertical" size={0}>
                     <Text>{record.dateSouhaitee ? formatDateTime(record.dateSouhaitee) : '-'}</Text>
@@ -285,9 +288,9 @@ const DemandesReunionManagement = () => {
     return (
         <div>
             {/* Header */}
-            <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-                <Col>
-                    <Title level={3} style={{ marginBottom: 4 }}>
+            <Row gutter={[16, 16]} justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={16}>
+                    <Title level={isMobile ? 4 : 3} style={{ marginBottom: 4 }}>
                         Demandes de Réunion
                         {pendingDemandes.length > 0 && (
                             <Badge
@@ -301,8 +304,8 @@ const DemandesReunionManagement = () => {
             </Row>
 
             {/* Stats Cards */}
-            <Row gutter={16} style={{ marginBottom: 24 }}>
-                <Col span={8}>
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={8}>
                     <Card
                         bordered={false}
                         className="stat-card-waiting"
@@ -320,7 +323,7 @@ const DemandesReunionManagement = () => {
                         </Space>
                     </Card>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={8}>
                     <Card
                         bordered={false}
                         className="stat-card-accepted"
@@ -338,7 +341,7 @@ const DemandesReunionManagement = () => {
                         </Space>
                     </Card>
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={8}>
                     <Card
                         bordered={false}
                         className="stat-card-refused"
@@ -360,20 +363,21 @@ const DemandesReunionManagement = () => {
 
             {/* Table */}
             <Card bordered={false} style={{ borderRadius: 12 }}>
-                <Row gutter={16} style={{ marginBottom: 16 }}>
-                    <Col flex="auto">
+                <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+                    <Col xs={24} md={12}>
                         <Search
-                            placeholder="Rechercher par nom ou titre..."
+                            placeholder="Rechercher..."
                             allowClear
                             onChange={(e) => setSearchText(e.target.value)}
-                            style={{ width: 300 }}
+                            style={{ width: '100%' }}
                             prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
                         />
                     </Col>
-                    <Col>
+                    <Col xs={24} md={12} style={{ textAlign: isMobile ? 'left' : 'right' }}>
                         <Button
                             type={filterStatus === 'all' ? 'primary' : 'default'}
                             onClick={() => setFilterStatus('all')}
+                            style={{ width: isMobile ? '100%' : 'auto' }}
                         >
                             Toutes
                         </Button>

@@ -78,8 +78,8 @@ const Dashboard = () => {
                     background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
                 }}
             >
-                <Row align="middle" justify="space-between">
-                    <Col>
+                <Row align="middle" justify="space-between" gutter={[0, 16]}>
+                    <Col xs={24} md={14}>
                         <Title level={3} style={{ color: '#fff', marginBottom: 4 }}>
                             Bienvenue, {user?.prenom} ! 👋
                         </Title>
@@ -87,8 +87,8 @@ const Dashboard = () => {
                             Voici un aperçu de vos activités
                         </Text>
                     </Col>
-                    <Col>
-                        <Space>
+                    <Col xs={24} md={10}>
+                        <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
                             <div style={{ textAlign: 'center', padding: '0 16px' }}>
                                 <Title level={2} style={{ color: '#fff', margin: 0 }}>{activeProjets.length}</Title>
                                 <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Projets actifs</Text>
@@ -104,7 +104,7 @@ const Dashboard = () => {
 
             <Row gutter={[24, 24]}>
                 {/* Projets Actifs */}
-                <Col xs={24} lg={12}>
+                <Col xs={24} md={12} lg={12}>
                     <Card
                         title={
                             <Space>
@@ -156,7 +156,7 @@ const Dashboard = () => {
                 </Col>
 
                 {/* Réunions à Venir */}
-                <Col xs={24} lg={12}>
+                <Col xs={24} md={12} lg={12}>
                     <Card
                         title={
                             <Space>
@@ -220,7 +220,7 @@ const Dashboard = () => {
                 </Col>
 
                 {/* Documents Récents */}
-                <Col xs={24} lg={12}>
+                <Col xs={24} md={12} lg={12}>
                     <Card
                         title={
                             <Space>
@@ -266,7 +266,7 @@ const Dashboard = () => {
                 </Col>
 
                 {/* Notifications */}
-                <Col xs={24} lg={12}>
+                <Col xs={24} md={12} lg={12}>
                     <Card
                         title={
                             <Space>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Typography, message, Space, Row, Col, Select, DatePicker } from 'antd';
+import { Form, Input, Button, Typography, message, Space, Row, Col, Select, DatePicker, Grid } from 'antd';
 import { UserOutlined, LockOutlined, GoogleOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -115,6 +115,12 @@ const LoginPage = () => {
         };
     }, []);
 
+    const { useBreakpoint } = Grid;
+    const screens = useBreakpoint();
+
+    // Default to true if undefined (SSR or initial render)
+    const isDesktop = screens.md === undefined ? true : screens.md;
+
     return (
         <div id="main-content" style={{
             height: '100vh',
@@ -122,26 +128,29 @@ const LoginPage = () => {
             position: 'relative',
             overflow: 'hidden',
             backgroundColor: '#fff',
-            display: 'flex'
+            display: 'flex',
+            flexDirection: isDesktop ? 'row' : 'column',
         }}>
 
             {/* Login Form Container (Left) */}
             <div style={{
-                width: '50%',
-                height: '100%',
-                padding: '0 100px',
-                display: 'flex',
+                width: isDesktop ? '50%' : '100%',
+                height: isDesktop ? '100%' : 'auto',
+                minHeight: isDesktop ? 'auto' : '100vh',
+                padding: isDesktop ? '0 100px' : '20px',
+                display: isSignUp ? 'none' : 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
                 textAlign: 'center',
-                position: 'absolute',
+                // On desktop, use absolute positioning for sliding effect. On mobile, just flow.
+                position: isDesktop ? 'absolute' : 'relative',
                 top: 0,
                 left: 0,
                 transition: 'all 0.6s ease-in-out',
                 zIndex: 2,
-                opacity: isSignUp ? 0 : 1,
-                pointerEvents: isSignUp ? 'none' : 'all',
+                opacity: isDesktop ? (isSignUp ? 0 : 1) : 1,
+                pointerEvents: isDesktop ? (isSignUp ? 'none' : 'all') : 'all',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }}>
                     <img src="/logo-tili.png" alt="TILI Logo" style={{ height: 60 }} />
@@ -187,7 +196,6 @@ const LoginPage = () => {
                     >
                         Connecter avec Gmail
                     </Button>
-                    {/* Native Google button hiddenly overlayed */}
                     <div
                         id="googleButtonContainer"
                         style={{
@@ -212,21 +220,22 @@ const LoginPage = () => {
 
             {/* Register Form Container (Right) */}
             <div style={{
-                width: '50%',
-                height: '100%',
-                padding: '20px 80px',
-                display: 'flex',
+                width: isDesktop ? '50%' : '100%',
+                height: isDesktop ? '100%' : 'auto',
+                minHeight: isDesktop ? 'auto' : '100vh',
+                padding: isDesktop ? '20px 80px' : '20px',
+                display: isSignUp ? 'flex' : 'none',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
                 textAlign: 'center',
-                position: 'absolute',
+                position: isDesktop ? 'absolute' : 'relative',
                 top: 0,
                 right: 0,
                 transition: 'all 0.6s ease-in-out',
                 zIndex: 1,
-                opacity: isSignUp ? 1 : 0,
-                pointerEvents: isSignUp ? 'all' : 'none',
+                opacity: isDesktop ? (isSignUp ? 1 : 0) : 1,
+                pointerEvents: isDesktop ? (isSignUp ? 'all' : 'none') : 'all',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 15 }}>
                     <img src="/logo-tili.png" alt="TILI Logo" style={{ height: 40, objectFit: 'contain' }} />
@@ -320,62 +329,60 @@ const LoginPage = () => {
                 </div>
             </div>
 
-            {/* Sliding Overlay / Image Container */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                right: 0, // Starts on right
-                width: '50%',
-                height: '100%',
-                overflow: 'hidden',
-                transition: 'transform 0.6s ease-in-out',
-                zIndex: 100,
-                transform: isSignUp ? 'translateX(-100%)' : 'translateX(0)',
-                borderRadius: 0, // No border radius
-                boxShadow: '0 0 50px rgba(0,0,0,0.2)', // Add shadow for depth
-            }}>
-                {/* The Image Itself */}
+            {/* Sliding Overlay / Image Container - Hidden on Mobile */}
+            {isDesktop && (
                 <div style={{
-                    background: '#1e3a8a',
-                    width: '100%',
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    width: '50%',
                     height: '100%',
-                    position: 'relative',
-                    color: '#fff',
+                    overflow: 'hidden',
+                    transition: 'transform 0.6s ease-in-out',
+                    zIndex: 100,
+                    transform: isSignUp ? 'translateX(-100%)' : 'translateX(0)',
+                    boxShadow: '0 0 50px rgba(0,0,0,0.2)',
                 }}>
-                    <img
-                        src="/login-illustration.png"
-                        alt="Background"
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                        }}
-                    />
-                    {/* Overlay Text */}
                     <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
+                        background: '#1e3a8a',
                         width: '100%',
                         height: '100%',
-                        background: 'linear-gradient(to bottom, rgba(30,58,138,0.3), rgba(30,58,138,0.7))',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        textAlign: 'center',
-                        padding: '60px',
+                        position: 'relative',
+                        color: '#fff',
                     }}>
-                        <h1 style={{ color: 'white', fontWeight: 'bold', fontSize: '3rem', marginBottom: '20px' }}>
-                            {isSignUp ? "Gestion Intelligente" : "Tunisia Inclusive Labor Institute"}
-                        </h1>
-                        <p style={{ color: 'white', fontSize: '1.5rem', maxWidth: '600px' }}>
-                            {isSignUp ? "Simplifiez votre travail quotidien." : "Votre plateforme de gestion interne."}
-                        </p>
+                        <img
+                            src="/login-illustration.png"
+                            alt="Background"
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                            }}
+                        />
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            background: 'linear-gradient(to bottom, rgba(30,58,138,0.3), rgba(30,58,138,0.7))',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            textAlign: 'center',
+                            padding: '60px',
+                        }}>
+                            <h1 style={{ color: 'white', fontWeight: 'bold', fontSize: '3rem', marginBottom: '20px' }}>
+                                {isSignUp ? "Gestion Intelligente" : "Tunisia Inclusive Labor Institute"}
+                            </h1>
+                            <p style={{ color: 'white', fontSize: '1.5rem', maxWidth: '600px' }}>
+                                {isSignUp ? "Simplifiez votre travail quotidien." : "Votre plateforme de gestion interne."}
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-
+            )}
         </div>
     );
 };

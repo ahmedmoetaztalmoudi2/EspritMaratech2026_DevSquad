@@ -17,6 +17,9 @@ public class UserServiceImpl implements IUserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     // ✅ SEULEMENT 3 emails pour responsable
     private static final String[] EMAILS_RESPONSABLES = {
             "awadhiaziz2@gmail.com",
@@ -39,6 +42,11 @@ public class UserServiceImpl implements IUserService {
             }
         }
 
+        // Hash password
+        if (user.getMotDePasse() != null) {
+            user.setMotDePasse(passwordEncoder.encode(user.getMotDePasse()));
+        }
+
         // Par défaut MEMBRE_ACTIF (déjà dans l'entité)
         user.setDateInscription(LocalDateTime.now());
         return userRepository.save(user);
@@ -58,6 +66,11 @@ public class UserServiceImpl implements IUserService {
             user.setTel(userDetails.getTel());
         if (userDetails.getRole() != null)
             user.setRole(userDetails.getRole());
+
+        // Update password if provided
+        if (userDetails.getMotDePasse() != null && !userDetails.getMotDePasse().isEmpty()) {
+            user.setMotDePasse(passwordEncoder.encode(userDetails.getMotDePasse()));
+        }
 
         // Handle dateNaissance if provided (assuming User entity has getter/setter)
         if (userDetails.getDateNaissance() != null)
@@ -142,12 +155,12 @@ public class UserServiceImpl implements IUserService {
     public void changePassword(int id, String oldPassword, String newPassword) {
         User user = getUserById(id);
 
-        // Verification simple (comme dans AuthController)
-        if (user.getMotDePasse() != null && !user.getMotDePasse().equals(oldPassword)) {
+        // Verification hash
+        if (user.getMotDePasse() != null && !passwordEncoder.matches(oldPassword, user.getMotDePasse())) {
             throw new RuntimeException("Ancien mot de passe incorrect");
         }
 
-        user.setMotDePasse(newPassword);
+        user.setMotDePasse(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
 

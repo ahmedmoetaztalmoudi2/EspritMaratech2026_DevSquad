@@ -1,6 +1,6 @@
 // FrontOffice Layout - User Interface with TILI Logo
 import React, { useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Badge, Typography, Space, Button, Switch } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Badge, Typography, Space, Button, Switch, Grid } from 'antd';
 import {
     DashboardOutlined,
     FileTextOutlined,
@@ -26,6 +26,7 @@ import { toggleDarkMode, toggleVoiceActive } from '../redux/uiSlice';
 
 const { Header, Content, Footer } = Layout;
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 const FrontOfficeLayout = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -34,6 +35,9 @@ const FrontOfficeLayout = () => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { isDarkMode, isVoiceActive } = useSelector((state) => state.ui);
+    const screens = useBreakpoint();
+
+    const isMobile = !screens.md; // Mobile if screen is smaller than 'md'
 
     const handleLogout = () => {
         dispatch(logout());
@@ -60,11 +64,6 @@ const FrontOfficeLayout = () => {
             key: '/mes-reunions',
             icon: <CalendarOutlined />,
             label: 'Mes Réunions',
-        },
-        {
-            key: '/notifications',
-            icon: <BellOutlined />,
-            label: 'Notifications',
         },
     ];
 
@@ -102,7 +101,7 @@ const FrontOfficeLayout = () => {
                     top: 0,
                     zIndex: 100,
                     width: '100%',
-                    padding: '0 24px',
+                    padding: isMobile ? '0 12px' : '0 24px',
                     background: '#fff',
                     display: 'flex',
                     alignItems: 'center',
@@ -125,22 +124,24 @@ const FrontOfficeLayout = () => {
                     <img
                         src="/logo-tili.png"
                         alt="TILI"
-                        style={{ height: 50 }}
+                        style={{ height: isMobile ? 40 : 50 }}
                     />
-                    <div style={{ borderLeft: '2px solid #e2e8f0', paddingLeft: 12, lineHeight: 1.15 }}>
-                        <Text style={{ fontSize: 10, fontWeight: 700, color: '#1e4a8d', display: 'block', letterSpacing: 1 }}>
-                            TUNISIA
-                        </Text>
-                        <Text style={{ fontSize: 10, fontWeight: 700, color: '#1e4a8d', display: 'block', letterSpacing: 1 }}>
-                            INCLUSIVE
-                        </Text>
-                        <Text style={{ fontSize: 10, fontWeight: 700, color: '#1e4a8d', display: 'block', letterSpacing: 1 }}>
-                            LABOR
-                        </Text>
-                        <Text style={{ fontSize: 10, fontWeight: 700, color: '#1e4a8d', display: 'block', letterSpacing: 1 }}>
-                            INSTITUTE
-                        </Text>
-                    </div>
+                    {!isMobile && (
+                        <div style={{ borderLeft: '2px solid #e2e8f0', paddingLeft: 12, lineHeight: 1.15 }}>
+                            <Text style={{ fontSize: 10, fontWeight: 700, color: '#1e4a8d', display: 'block', letterSpacing: 1 }}>
+                                TUNISIA
+                            </Text>
+                            <Text style={{ fontSize: 10, fontWeight: 700, color: '#1e4a8d', display: 'block', letterSpacing: 1 }}>
+                                INCLUSIVE
+                            </Text>
+                            <Text style={{ fontSize: 10, fontWeight: 700, color: '#1e4a8d', display: 'block', letterSpacing: 1 }}>
+                                LABOR
+                            </Text>
+                            <Text style={{ fontSize: 10, fontWeight: 700, color: '#1e4a8d', display: 'block', letterSpacing: 1 }}>
+                                INSTITUTE
+                            </Text>
+                        </div>
+                    )}
                 </div>
 
                 {/* Desktop Menu */}
@@ -157,6 +158,7 @@ const FrontOfficeLayout = () => {
                         justifyContent: 'center',
                         border: 'none',
                         background: 'transparent',
+                        display: isMobile ? 'none' : 'flex',
                     }}
                     className="desktop-menu"
                     role="navigation"
@@ -164,44 +166,51 @@ const FrontOfficeLayout = () => {
                 />
 
                 {/* Right Actions */}
-                <Space size={16}>
-                    <Space size={8}>
-                        <Switch
-                            checked={isVoiceActive}
-                            onChange={() => dispatch(toggleVoiceActive())}
-                            checkedChildren={<AudioOutlined />}
-                            unCheckedChildren={<AudioMutedOutlined />}
-                            title="Assistant vocal"
-                            aria-label="Activer l'assistant vocal"
-                        />
-                        <Switch
-                            checked={isDarkMode}
-                            onChange={() => dispatch(toggleDarkMode())}
-                            checkedChildren={<BulbFilled />}
-                            unCheckedChildren={<BulbOutlined />}
-                            title="Mode sombre"
-                            aria-label="Passer au mode sombre"
-                        />
-                    </Space>
+                <Space size={isMobile ? 8 : 16}>
+                    {!isMobile && (
+                        <Space size={8}>
+                            <Switch
+                                checked={isVoiceActive}
+                                onChange={() => dispatch(toggleVoiceActive())}
+                                checkedChildren={<AudioOutlined />}
+                                unCheckedChildren={<AudioMutedOutlined />}
+                                title="Assistant vocal"
+                                aria-label="Activer l'assistant vocal"
+                            />
+                            <Switch
+                                checked={isDarkMode}
+                                onChange={() => dispatch(toggleDarkMode())}
+                                checkedChildren={<BulbFilled />}
+                                unCheckedChildren={<BulbOutlined />}
+                                title="Mode sombre"
+                                aria-label="Passer au mode sombre"
+                            />
+                        </Space>
+                    )}
+
                     <NotificationDropdown />
+
                     <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                         <Space style={{ cursor: 'pointer' }}>
                             <Avatar
                                 src={user?.photoProfil}
                                 style={{ background: '#c9a227' }}
+                                size={isMobile ? 'small' : 'default'}
                             >
                                 {user && getInitials(user.nom, user.prenom)}
                             </Avatar>
-                            <Text className="user-name-desktop" style={{ fontWeight: 500 }}>
-                                {user?.prenom}
-                            </Text>
+                            {!isMobile && (
+                                <Text className="user-name-desktop" style={{ fontWeight: 500 }}>
+                                    {user?.prenom}
+                                </Text>
+                            )}
                         </Space>
                     </Dropdown>
                     <Button
                         type="text"
                         icon={mobileMenuOpen ? <CloseOutlined /> : <MenuOutlined />}
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        style={{ display: 'none' }}
+                        style={{ display: isMobile ? 'inline-flex' : 'none' }}
                         className="mobile-menu-button"
                         aria-label="Ouvrir le menu mobile"
                         aria-expanded={mobileMenuOpen}
@@ -217,13 +226,33 @@ const FrontOfficeLayout = () => {
                         top: 64,
                         left: 0,
                         right: 0,
+                        height: 'calc(100vh - 64px)',
                         background: '#fff',
                         zIndex: 99,
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                        padding: '24px',
+                        overflowY: 'auto',
                     }}
                 >
+                    <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text strong>Menu</Text>
+                        <Space>
+                            <Switch
+                                checked={isVoiceActive}
+                                onChange={() => dispatch(toggleVoiceActive())}
+                                checkedChildren={<AudioOutlined />}
+                                unCheckedChildren={<AudioMutedOutlined />}
+                            />
+                            <Switch
+                                checked={isDarkMode}
+                                onChange={() => dispatch(toggleDarkMode())}
+                                checkedChildren={<BulbFilled />}
+                                unCheckedChildren={<BulbOutlined />}
+                            />
+                        </Space>
+                    </div>
                     <Menu
-                        mode="vertical"
+                        mode="inline"
                         selectedKeys={[location.pathname]}
                         items={menuItems}
                         onClick={({ key }) => {
@@ -239,7 +268,7 @@ const FrontOfficeLayout = () => {
                 id="main-content"
                 role="main"
                 style={{
-                    padding: '24px',
+                    padding: isMobile ? '12px' : '24px',
                     background: '#f5f7fa',
                     minHeight: 'calc(100vh - 64px - 70px)',
                 }}
@@ -255,10 +284,10 @@ const FrontOfficeLayout = () => {
                     textAlign: 'center',
                     background: '#1e4a8d',
                     color: 'rgba(255, 255, 255, 0.8)',
-                    padding: '20px 24px',
+                    padding: isMobile ? '12px' : '20px 24px',
                 }}
             >
-                <Text style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: isMobile ? 12 : 14 }}>
                     TILI - Tunisia Inclusive Labor Institute © {new Date().getFullYear()}
                 </Text>
             </Footer>
@@ -270,9 +299,6 @@ const FrontOfficeLayout = () => {
           }
           .mobile-menu-button {
             display: inline-flex !important;
-          }
-          .user-name-desktop {
-            display: none;
           }
         }
       `}</style>

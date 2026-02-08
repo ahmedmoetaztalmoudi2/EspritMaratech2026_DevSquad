@@ -22,7 +22,7 @@ public class User {
     private String prenom;
     private String email;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     @Column(name = "mot_de_passe")
     private String motDePasse;
 

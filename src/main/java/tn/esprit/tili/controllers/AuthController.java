@@ -7,6 +7,11 @@ import tn.esprit.tili.services.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +26,12 @@ public class AuthController {
 
     @Autowired
     private IUserService userService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
@@ -44,12 +55,13 @@ public class AuthController {
             return ResponseEntity.status(403).body(Map.of("error", "your account was blocked"));
         }
 
-        // Verification simple du mot de passe (en production, utiliser BCrypt)
-        if (user.getMotDePasse() != null && !user.getMotDePasse().equals(password)) {
-            // Pour le dev, accepter si le mot de passe est vide dans la base
-            if (!user.getMotDePasse().isEmpty()) {
-                return ResponseEntity.status(401).body(Map.of("error", "Email ou mot de passe incorrect"));
-            }
+        // Authentification via Spring Security
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, password));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Map.of("error", "Email ou mot de passe incorrect"));
         }
 
         // Generer un token simple (en production, utiliser JWT)
@@ -73,6 +85,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
+        System.out.println("Register request received for: " + user.getEmail());
         try {
             // Par defaut, nouveau utilisateur = CONSULTANT
             if (user.getRole() == null) {

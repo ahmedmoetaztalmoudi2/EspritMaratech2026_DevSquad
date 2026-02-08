@@ -244,21 +244,21 @@ const MesDocuments = () => {
 
             {/* Filters */}
             <Card bordered={false} style={{ borderRadius: 12, marginBottom: 24 }}>
-                <Row gutter={16}>
-                    <Col flex="auto">
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} md={16} lg={18}>
                         <Search
                             placeholder="Rechercher un document..."
                             allowClear
                             onChange={(e) => setSearchText(e.target.value)}
-                            style={{ width: 300 }}
+                            style={{ width: '100%' }}
                             prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
                         />
                     </Col>
-                    <Col>
+                    <Col xs={24} md={8} lg={6}>
                         <Select
                             placeholder="Type de document"
                             allowClear
-                            style={{ width: 180 }}
+                            style={{ width: '100%' }}
                             onChange={(value) => setTypeFilter(value)}
                         >
                             {Object.entries(TYPE_DOCUMENT_LABELS).map(([key, label]) => (

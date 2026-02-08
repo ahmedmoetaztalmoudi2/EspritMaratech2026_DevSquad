@@ -147,25 +147,35 @@ const ReunionsManagement = () => {
     const handleSubmit = async (values) => {
         try {
             const [dateDebut, dateFin] = values.dateRange;
+
+            // Filter unique user IDs to avoid duplicates
+            const uniqueParticipantIds = [...new Set(values.participantIds || [])];
+
             const data = {
-                ...values,
-                organisateurId: user?.id || user?.idUser,
+                titre: values.titre,
                 dateDebut: dateDebut.format('YYYY-MM-DDTHH:mm:ss'),
                 dateFin: dateFin.format('YYYY-MM-DDTHH:mm:ss'),
-                participants: users.filter(u => values.participantIds?.includes(u.idUser || u.id)),
-                organisateur: user,
+                lieu: values.lieu,
+                lienMeet: values.lienMeet,
+                ordreDuJour: values.ordreDuJour,
+                statut: values.statut,
+                compteRendu: values.compteRendu,
+                participants: users.filter(u => uniqueParticipantIds.includes(u.idUser || u.id)),
             };
 
+            const organisateurId = user?.id || user?.idUser;
+
             if (editingReunion) {
-                await dispatch(updateReunion({ id: editingReunion.id, data, userId: user?.id || user?.idUser })).unwrap();
+                await dispatch(updateReunion({ id: editingReunion.id, data, userId: organisateurId })).unwrap();
                 message.success('Réunion modifiée avec succès');
             } else {
-                await dispatch(createReunion(data)).unwrap();
+                await dispatch(createReunion({ ...data, organisateurId })).unwrap();
                 message.success('Réunion créée avec succès');
             }
             handleCloseModal();
         } catch (error) {
-            message.error('Une erreur est survenue');
+            console.error('Meeting submission error:', error);
+            message.error(typeof error === 'string' ? error : 'Une erreur est survenue lors de l\'enregistrement');
         }
     };
 
@@ -673,7 +683,7 @@ const ReunionsManagement = () => {
                             mode="multiple"
                             placeholder="Sélectionner les participants"
                             optionFilterProp="label"
-                            options={users.map(u => ({
+                            options={[...new Map(users.map(u => [u.idUser || u.id, u])).values()].map(u => ({
                                 value: u.idUser || u.id,
                                 label: `${u.prenom} ${u.nom}`,
                             }))}

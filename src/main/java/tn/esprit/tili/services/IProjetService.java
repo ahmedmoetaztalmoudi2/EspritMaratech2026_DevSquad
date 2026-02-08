@@ -4,6 +4,7 @@ import tn.esprit.tili.entities.Projet;
 import tn.esprit.tili.entities.StatutProjet;
 import tn.esprit.tili.entities.User;
 import java.util.List;
+import java.util.Map;
 
 public interface IProjetService {
     Projet createProjet(Projet projet, int chefProjetId);
@@ -35,4 +36,13 @@ public interface IProjetService {
     List<Projet> getProjetsEnRetard();
 
     List<Projet> getProjetsAVenir();
+
+    // Méthodes pour les demandes de projet
+    Projet createProjectRequest(Map<String, Object> requestData);
+
+    List<Projet> getAllProjectRequests();
+
+    Projet acceptProjectRequest(int requestId);
+
+    void rejectProjectRequest(int requestId);
 }

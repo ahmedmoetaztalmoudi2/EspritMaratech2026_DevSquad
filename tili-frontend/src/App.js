@@ -108,8 +108,8 @@ const AppContent = () => {
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
 
-        {/* Catch all - redirect to dashboard */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* Catch all - redirect to login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
       <VoiceAssistant />
       <Chatbot />

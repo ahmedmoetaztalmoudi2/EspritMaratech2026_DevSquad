@@ -5,5 +5,8 @@ public enum TypeNotification {
     ALERTE,
     RAPPEL,
     SUCCES,
-    ERREUR
+    ERREUR,
+    DOCUMENT,
+    REUNION,
+    PROJET
 }

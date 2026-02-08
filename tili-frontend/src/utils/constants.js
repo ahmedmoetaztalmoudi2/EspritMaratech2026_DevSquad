@@ -166,23 +166,29 @@ export const STATUT_REUNION_COLORS = {
 // Project Status
 export const STATUT_PROJET = {
     PLANIFIE: 'PLANIFIE',
+    EN_PREPARATION: 'EN_PREPARATION',
     ACTIF: 'ACTIF',
     EN_PAUSE: 'EN_PAUSE',
     CLOTURE: 'CLOTURE',
+    ANNULE: 'ANNULE',
 };
 
 export const STATUT_PROJET_LABELS = {
     PLANIFIE: 'Planifié',
+    EN_PREPARATION: 'En préparation',
     ACTIF: 'Actif',
     EN_PAUSE: 'En pause',
     CLOTURE: 'Clôturé',
+    ANNULE: 'Annulé',
 };
 
 export const STATUT_PROJET_COLORS = {
     PLANIFIE: '#64748b',
+    EN_PREPARATION: '#8b5cf6',
     ACTIF: '#10b981',
     EN_PAUSE: '#c9a227',
     CLOTURE: '#1e4a8d',
+    ANNULE: '#ef4444',
 };
 
 // Notifications
@@ -191,6 +197,11 @@ export const TYPE_NOTIFICATION = {
     REUNION: 'REUNION',
     PROJET: 'PROJET',
     SYSTEME: 'SYSTEME',
+    RAPPEL: 'RAPPEL',
+    INFO: 'INFO',
+    ALERTE: 'ALERTE',
+    SUCCES: 'SUCCES',
+    ERREUR: 'ERREUR',
 };
 
 export const TYPE_NOTIFICATION_LABELS = {
@@ -202,9 +213,14 @@ export const TYPE_NOTIFICATION_LABELS = {
 
 export const TYPE_NOTIFICATION_COLORS = {
     DOCUMENT: '#3c7bb8',
-    REUNION: '#c9a227',
-    PROJET: '#7c3aed',
+    REUNION: '#8b5cf6',
+    PROJET: '#10b981',
     SYSTEME: '#64748b',
+    RAPPEL: '#f59e0b',
+    INFO: '#3b82f6',
+    ALERTE: '#ef4444',
+    SUCCES: '#16a34a',
+    ERREUR: '#dc2626',
 };
 
 // Action Types for History

@@ -136,4 +136,38 @@ public class ProjetController {
     public ResponseEntity<List<Projet>> getProjetsAVenir() {
         return ResponseEntity.ok(projetService.getProjetsAVenir());
     }
+
+    // Endpoints pour les demandes de projets
+    @PostMapping("/requests")
+    public ResponseEntity<?> createProjectRequest(@RequestBody Map<String, Object> requestData) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(projetService.createProjectRequest(requestData));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/requests")
+    public ResponseEntity<List<Projet>> getAllProjectRequests() {
+        return ResponseEntity.ok(projetService.getAllProjectRequests());
+    }
+
+    @PostMapping("/requests/{id}/accept")
+    public ResponseEntity<?> acceptProjectRequest(@PathVariable int id) {
+        try {
+            return ResponseEntity.ok(projetService.acceptProjectRequest(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/requests/{id}/reject")
+    public ResponseEntity<?> rejectProjectRequest(@PathVariable int id) {
+        try {
+            projetService.rejectProjectRequest(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

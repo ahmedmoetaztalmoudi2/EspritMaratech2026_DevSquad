@@ -1,6 +1,6 @@
 // BackOffice Layout - Admin Panel with TILI Logo
 import React, { useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Badge, Typography, Space, Button, Switch } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Badge, Typography, Space, Button, Switch, Grid } from 'antd';
 import {
     DashboardOutlined,
     UserOutlined,
@@ -27,6 +27,7 @@ import { toggleDarkMode, toggleVoiceActive } from '../redux/uiSlice';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 const BackOfficeLayout = () => {
     const [collapsed, setCollapsed] = useState(false);
@@ -35,6 +36,9 @@ const BackOfficeLayout = () => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { isDarkMode, isVoiceActive } = useSelector((state) => state.ui);
+    const screens = useBreakpoint();
+
+    const isMobile = !screens.lg;
 
     const handleLogout = () => {
         dispatch(logout());
@@ -77,11 +81,6 @@ const BackOfficeLayout = () => {
             icon: <HistoryOutlined />,
             label: 'Historique',
         },
-        {
-            key: '/admin/notifications',
-            icon: <BellOutlined />,
-            label: 'Notifications',
-        },
     ];
 
     const userMenuItems = [
@@ -109,12 +108,25 @@ const BackOfficeLayout = () => {
                 trigger={null}
                 collapsible
                 collapsed={collapsed}
+                breakpoint="lg"
+                collapsedWidth="0"
+                onBreakpoint={(broken) => {
+                    if (broken) {
+                        setCollapsed(true);
+                    }
+                }}
                 width={260}
                 role="navigation"
                 aria-label="Menu latéral d'administration"
                 style={{
                     background: 'linear-gradient(180deg, #1e4a8d 0%, #153a6e 100%)',
                     boxShadow: '2px 0 8px rgba(0, 0, 0, 0.15)',
+                    height: '100vh',
+                    position: 'fixed',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    zIndex: 1000,
                 }}
             >
                 {/* Logo */}
@@ -209,7 +221,10 @@ const BackOfficeLayout = () => {
                 )}
             </Sider>
 
-            <Layout>
+            <Layout style={{
+                transition: 'all 0.2s',
+                marginLeft: isMobile ? 0 : (collapsed ? 0 : 260),
+            }}>
                 <Header
                     role="banner"
                     style={{
@@ -233,32 +248,31 @@ const BackOfficeLayout = () => {
                             style={{ fontSize: 18 }}
                             aria-label={collapsed ? "Développer le menu" : "Réduire le menu"}
                         />
-                        <Text strong style={{ fontSize: 18, color: '#1e4a8d' }}>
+                        <Text strong style={{ fontSize: isMobile ? 14 : 18, color: '#1e4a8d', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: isMobile ? 120 : 'none' }}>
                             {menuItems.find(item => item.key === location.pathname)?.label || 'Administration'}
                         </Text>
                     </Space>
                     <Space size={16}>
-                        <Space size={8}>
+                        <Space size={isMobile ? 4 : 8}>
                             <Switch
+                                size="small"
                                 checked={isVoiceActive}
                                 onChange={() => dispatch(toggleVoiceActive())}
                                 checkedChildren={<AudioOutlined />}
                                 unCheckedChildren={<AudioMutedOutlined />}
-                                title="Activer l'assistant vocal"
-                                aria-label="Activer l'assistant vocal"
                             />
                             <Switch
+                                size="small"
                                 checked={isDarkMode}
                                 onChange={() => dispatch(toggleDarkMode())}
                                 checkedChildren={<BulbFilled />}
                                 unCheckedChildren={<BulbOutlined />}
-                                title="Mode sombre"
-                                aria-label="Passer au mode sombre"
                             />
                         </Space>
                         <NotificationDropdown />
                         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
                             <Avatar
+                                size={isMobile ? 'small' : 'default'}
                                 src={user?.photoProfil}
                                 style={{ cursor: 'pointer', background: '#c9a227' }}
                             >

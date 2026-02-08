@@ -72,7 +72,12 @@ public class DocumentServiceImpl implements IDocumentService {
             Document savedDoc = documentRepository.save(document);
 
             // Notification
-            notificationService.notifyNewDocument(uploader, savedDoc.getTitre());
+            if (savedDoc.getProjet() != null) {
+                notificationService.notifyNewDocumentToProjectMembers(uploader, savedDoc.getTitre(),
+                        savedDoc.getProjet().getId());
+            } else {
+                notificationService.notifyNewDocument(uploader, savedDoc.getTitre());
+            }
 
             // Log to historique
             historiqueService.logAction(uploader, TypeAction.TELEVERSEMENT, "DOCUMENT", savedDoc.getId(),

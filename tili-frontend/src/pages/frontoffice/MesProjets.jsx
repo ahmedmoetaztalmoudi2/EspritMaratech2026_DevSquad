@@ -71,7 +71,7 @@ const MesProjets = () => {
     return (
         <div>
             {/* Header */}
-            <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+            <Row justify="space-between" align="middle" style={{ marginBottom: 24 }} gutter={[16, 16]}>
                 <Col>
                     <Title level={3} style={{ marginBottom: 4 }}>Mes Projets</Title>
                     <Text type="secondary">{projets.filter(p => p.statut === 'ACTIF').length} projets actifs</Text>
@@ -93,21 +93,21 @@ const MesProjets = () => {
 
             {/* Filters */}
             <Card bordered={false} style={{ borderRadius: 12, marginBottom: 24 }}>
-                <Row gutter={16}>
-                    <Col flex="auto">
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} md={16} lg={18}>
                         <Search
                             placeholder="Rechercher un projet..."
                             allowClear
                             onChange={(e) => setSearchText(e.target.value)}
-                            style={{ width: 300 }}
+                            style={{ width: '100%' }}
                             prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
                         />
                     </Col>
-                    <Col>
+                    <Col xs={24} md={8} lg={6}>
                         <Select
                             placeholder="Statut"
                             allowClear
-                            style={{ width: 150 }}
+                            style={{ width: '100%' }}
                             onChange={(value) => setStatutFilter(value)}
                         >
                             {Object.entries(STATUT_PROJET_LABELS).map(([key, label]) => (

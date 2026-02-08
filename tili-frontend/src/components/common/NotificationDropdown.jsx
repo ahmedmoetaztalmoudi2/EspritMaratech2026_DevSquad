@@ -12,6 +12,7 @@ import {
     deleteNotification
 } from '../../redux/notificationSlice';
 import { formatRelativeTime } from '../../utils/helpers';
+import { TYPE_NOTIFICATION_COLORS } from '../../utils/constants';
 
 const { Text, Title } = Typography;
 
@@ -81,14 +82,7 @@ const NotificationDropdown = () => {
     };
 
     const getNotificationColor = (type) => {
-        switch (type) {
-            case 'URGENT': return '#ef4444';
-            case 'RAPPEL': return '#f59e0b';
-            case 'DOCUMENT': return '#3b82f6';
-            case 'REUNION': return '#8b5cf6';
-            case 'PROJET': return '#10b981';
-            default: return '#64748b';
-        }
+        return TYPE_NOTIFICATION_COLORS[type] || '#64748b';
     };
 
     const content = (

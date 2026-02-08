@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import {
     Card, Table, Button, Space, Tag, Modal, Form, Input, Select, DatePicker,
-    Typography, message, Row, Col, Tooltip, Progress, Slider, Statistic, Avatar, Popconfirm, Tabs, Empty,
+    Typography, message, Row, Col, Tooltip, Progress, Slider, Statistic, Avatar, Popconfirm, Tabs, Empty, Grid
 } from 'antd';
 import {
     PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
@@ -40,6 +40,8 @@ const ProjetsManagement = () => {
     const { users } = useSelector((state) => state.users);
     const { user } = useSelector((state) => state.auth);
     const { isDarkMode } = useSelector((state) => state.ui);
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
 
     // Get user permissions
     const userPermissions = PROJECT_PERMISSIONS[user?.role] || {
@@ -135,6 +137,16 @@ const ProjetsManagement = () => {
                 dateFinReelle: values.dateFinReelle?.format('YYYY-MM-DD') || null,
             };
 
+            // Initialize pourcentageAvancement for new projects
+            if (!editingProjet) {
+                data.pourcentageAvancement = 0;
+            }
+
+            // Remove null dateFinReelle to prevent backend validation errors
+            if (!data.dateFinReelle) {
+                delete data.dateFinReelle;
+            }
+
             if (editingProjet) {
                 await dispatch(updateProjet({ id: editingProjet.id, data, userId: user?.id || user?.idUser })).unwrap();
                 message.success('Projet modifié avec succès');
@@ -144,7 +156,8 @@ const ProjetsManagement = () => {
             }
             handleCloseModal();
         } catch (error) {
-            message.error('Une erreur est survenue');
+            console.error('Erreur lors de la soumission du projet:', error);
+            message.error(error || 'Une erreur est survenue');
         }
     };
 
@@ -211,6 +224,7 @@ const ProjetsManagement = () => {
         {
             title: 'Responsable',
             key: 'responsable',
+            responsive: ['lg'],
             render: (_, record) => record.responsable && (
                 <Space>
                     <Avatar
@@ -227,6 +241,7 @@ const ProjetsManagement = () => {
         {
             title: 'Dates',
             key: 'dates',
+            responsive: ['md'],
             render: (_, record) => (
                 <Space direction="vertical" size={0}>
                     <Text style={{ fontSize: 12 }}>
@@ -266,6 +281,7 @@ const ProjetsManagement = () => {
             title: 'Budget',
             dataIndex: 'budget',
             key: 'budget',
+            responsive: ['xl'],
             render: (budget) => budget ? `${budget.toLocaleString()} TND` : '-',
         },
         {
@@ -339,6 +355,7 @@ const ProjetsManagement = () => {
             title: 'Date Demande',
             dataIndex: 'dateDemande',
             key: 'dateDemande',
+            responsive: ['md'],
             render: (date) => formatDate(date)
         },
         {
@@ -428,18 +445,18 @@ const ProjetsManagement = () => {
     return (
         <div>
             {/* Header */}
-            <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-                <Col>
-                    <Title level={3} style={{ marginBottom: 4 }}>Gestion des Projets</Title>
+            <Row gutter={[16, 16]} justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={16}>
+                    <Title level={isMobile ? 4 : 3} style={{ marginBottom: 4 }}>Gestion des Projets</Title>
                     <Text type="secondary">{stats.actifs} actifs sur {stats.total} projets</Text>
                 </Col>
-                <Col>
+                <Col xs={24} sm={8} style={{ textAlign: isMobile ? 'left' : 'right' }}>
                     {userPermissions.canCreate && (
                         <Button
                             type="primary"
                             icon={<PlusOutlined />}
                             onClick={() => handleOpenModal()}
-                            style={{ borderRadius: 8 }}
+                            style={{ borderRadius: 8, width: isMobile ? '100%' : 'auto' }}
                         >
                             Nouveau Projet
                         </Button>
@@ -448,8 +465,8 @@ const ProjetsManagement = () => {
             </Row>
 
             {/* Stats Cards */}
-            <Row gutter={16} style={{ marginBottom: 24 }}>
-                <Col xs={6}>
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={12} md={6}>
                     <Card bordered={false} style={{ borderRadius: 12 }}>
                         <Statistic
                             title="Total Projets"
@@ -458,7 +475,7 @@ const ProjetsManagement = () => {
                         />
                     </Card>
                 </Col>
-                <Col xs={6}>
+                <Col xs={24} sm={12} md={6}>
                     <Card bordered={false} style={{ borderRadius: 12 }}>
                         <Statistic
                             title="Projets Actifs"
@@ -468,7 +485,7 @@ const ProjetsManagement = () => {
                         />
                     </Card>
                 </Col>
-                <Col xs={6}>
+                <Col xs={24} sm={12} md={6}>
                     <Card bordered={false} style={{ borderRadius: 12 }}>
                         <Statistic
                             title="Clôturés"
@@ -479,7 +496,7 @@ const ProjetsManagement = () => {
                     </Card>
                 </Col>
                 {user?.role === 'RESPONSABLE' && (
-                    <Col xs={6}>
+                    <Col xs={24} sm={12} md={6}>
                         <Card bordered={false} style={{ borderRadius: 12 }}>
                             <Statistic
                                 title="Demandes"
@@ -497,21 +514,21 @@ const ProjetsManagement = () => {
                 <Tabs defaultActiveKey="1" items={items} onChange={setActiveTab} />
 
                 {activeTab === '1' && (
-                    <Row gutter={16} style={{ marginTop: 16 }}>
-                        <Col flex="auto">
+                    <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                        <Col xs={24} md={12} lg={8}>
                             <Search
-                                placeholder="Rechercher par nom ou description..."
+                                placeholder="Rechercher..."
                                 allowClear
                                 onChange={(e) => setSearchText(e.target.value)}
-                                style={{ width: 300 }}
+                                style={{ width: '100%' }}
                                 prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
                             />
                         </Col>
-                        <Col>
+                        <Col xs={24} md={6}>
                             <Select
                                 placeholder="Statut"
                                 allowClear
-                                style={{ width: 150 }}
+                                style={{ width: '100%' }}
                                 onChange={(value) => setStatutFilter(value)}
                             >
                                 {Object.entries(STATUT_PROJET_LABELS).map(([key, label]) => (
@@ -563,7 +580,7 @@ const ProjetsManagement = () => {
                     </Form.Item>
 
                     <Row gutter={16}>
-                        <Col span={8}>
+                        <Col xs={24} sm={8}>
                             <Form.Item
                                 name="dateDebut"
                                 label="Date de début"
@@ -572,7 +589,7 @@ const ProjetsManagement = () => {
                                 <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
+                        <Col xs={24} sm={8}>
                             <Form.Item
                                 name="dateFinPrevue"
                                 label="Date de fin prévue"
@@ -581,7 +598,7 @@ const ProjetsManagement = () => {
                                 <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
                             </Form.Item>
                         </Col>
-                        <Col span={8}>
+                        <Col xs={24} sm={8}>
                             <Form.Item
                                 name="dateFinReelle"
                                 label="Date de fin réelle"
@@ -592,7 +609,7 @@ const ProjetsManagement = () => {
                     </Row>
 
                     <Row gutter={16}>
-                        <Col span={12}>
+                        <Col xs={24} sm={12}>
                             <Form.Item
                                 name="budget"
                                 label="Budget (TND)"
@@ -600,7 +617,7 @@ const ProjetsManagement = () => {
                                 <Input type="number" placeholder="0" suffix="TND" />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col xs={24} sm={12}>
                             <Form.Item
                                 name="statut"
                                 label="Statut"
@@ -665,7 +682,7 @@ const ProjetsManagement = () => {
                 {viewingProjet && (
                     <div style={{ marginTop: 16 }}>
                         <Row gutter={[16, 16]}>
-                            <Col span={12}>
+                            <Col xs={24} sm={12}>
                                 <Text type="secondary">Statut</Text>
                                 <div>
                                     <Tag color={STATUT_PROJET_COLORS[viewingProjet.statut]}>
@@ -673,30 +690,30 @@ const ProjetsManagement = () => {
                                     </Tag>
                                 </div>
                             </Col>
-                            <Col span={12}>
+                            <Col xs={24} sm={12}>
                                 <Text type="secondary">Avancement</Text>
                                 <Progress
                                     percent={viewingProjet.pourcentageAvancement}
                                     strokeColor={getProgressColor(viewingProjet.pourcentageAvancement)}
                                 />
                             </Col>
-                            <Col span={24}>
+                            <Col xs={24}>
                                 <Text type="secondary">Description</Text>
                                 <Paragraph>{viewingProjet.description || '-'}</Paragraph>
                             </Col>
-                            <Col span={24}>
+                            <Col xs={24}>
                                 <Text type="secondary">Objectifs</Text>
                                 <Paragraph style={{ whiteSpace: 'pre-line' }}>{viewingProjet.objectifs || '-'}</Paragraph>
                             </Col>
-                            <Col span={8}>
+                            <Col xs={24} sm={8}>
                                 <Text type="secondary">Début</Text>
                                 <Paragraph>{formatDate(viewingProjet.dateDebut)}</Paragraph>
                             </Col>
-                            <Col span={8}>
+                            <Col xs={24} sm={8}>
                                 <Text type="secondary">Fin prévue</Text>
                                 <Paragraph>{formatDate(viewingProjet.dateFinPrevue)}</Paragraph>
                             </Col>
-                            <Col span={8}>
+                            <Col xs={24} sm={8}>
                                 <Text type="secondary">Budget</Text>
                                 <Paragraph>{viewingProjet.budget ? `${viewingProjet.budget.toLocaleString()} TND` : '-'}</Paragraph>
                             </Col>

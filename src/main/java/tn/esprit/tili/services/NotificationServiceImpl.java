@@ -124,6 +124,41 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
+    public void notifyNewDocumentToProjectMembers(User uploader, String documentTitre, int projetId) {
+        Projet projet = projetRepository.findById(projetId)
+                .orElseThrow(() -> new RuntimeException("Projet non trouve"));
+
+        for (User membre : projet.getMembres()) {
+            if (membre.getIdUser() != uploader.getIdUser()) {
+                createNotification(
+                        membre,
+                        "Nouveau document dans votre projet",
+                        "Le document '" + documentTitre + "' a ete ajoute au projet '" + projet.getNom() + "' par "
+                                + uploader.getNomComplet(),
+                        "DOCUMENT");
+            }
+        }
+    }
+
+    @Override
+    public void notifyUpcomingReunion(Reunion reunion, User participant) {
+        createNotification(
+                participant,
+                "Rappel : Reunion proche",
+                "Votre reunion '" + reunion.getTitre() + "' commence dans 15 minutes.",
+                "RAPPEL");
+    }
+
+    @Override
+    public void notifyProjetAssignment(User membre, String projetNom) {
+        createNotification(
+                membre,
+                "Assignation a un projet",
+                "Vous avez ete ajoute au projet: " + projetNom,
+                "INFO");
+    }
+
+    @Override
     public void notifyProjetUpdate(int projetId, String message) {
         Projet projet = projetRepository.findById(projetId)
                 .orElseThrow(() -> new RuntimeException("Projet non trouve"));
